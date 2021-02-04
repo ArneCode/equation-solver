@@ -10,16 +10,16 @@ let operands = [{
   level: 0
 }, {
   text: "*",
-  level: 1
+  level: 2
 }, {
   text: "/",
   level: 1
 }, {
   text: "^",
-  level: 2
+  level: 3
 }, {
   text: "%",
-  level: 2
+  level: 3
 }]
 let parantheses = "()"
 let braces = "{}"

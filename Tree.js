@@ -61,9 +61,9 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
       text: token.text
     }
 
-    if (nextOpIndex == tokenIndex + 2 && doChain) {
+    if (nextOpIndex == tokenIndex + 2) {
       opChain.push(newObj)
-    } else if (opChain.length > 0 && doChain) {
+    } else {
       opChain.push(newObj)
 
       let chainStart = 1 + tokenIndex - opChain.length * 2
@@ -77,10 +77,10 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
 
       indexOff += opChain.length
       opChain = []
-    } else {
+    }/* else {
       tokens.splice(tokenIndex - 1, 3, newObj)
       indexOff += 2
-    }
+    }*/
   }
 }
 
@@ -163,13 +163,16 @@ nextToken.text=nextToken.text=="+"?"-":"+"
     }
   }
   if (level == 3) {
-    handleSyntaxOp(tokens, 2, "pow")
+    handleSyntaxOp(tokens, 3, "pow")
 
   }
   if (level == 1) {
-    handleSyntaxOp(tokens, 1, "punkt", true)
+    handleSyntaxOp(tokens, 2, "punkt", true)
   }
-  if (level == 0) {
+  if(level==0){
+    handleSyntaxOp(tokens,1,"div")
+}
+  if (level == -1) {
     let i = 0
     while (i < tokens.length) {
       if (tokens[i + 1]) {
@@ -183,9 +186,9 @@ nextToken.text=nextToken.text=="+"?"-":"+"
     }
     handleSyntaxOp(tokens, 0, "plus", true)
   }
-  if (level > 0)
-    return createSyntaxTree(tokens, level - 1)
-  else
+  if (level >= 0){
+    return createSyntaxTree(tokens, level - 1)}
+  else{
     variablesInBlock(tokens[0])
-  return tokens
+  return tokens}
 }
