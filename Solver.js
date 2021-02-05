@@ -128,13 +128,13 @@ function getInfo(token){
         }
       }
     }
-  }else if(token.type=number){
+  }else if(token.type==number){
     return {
       factor:token.value,
       kind:""
     }
   }
-  return {factor:1;kindObj:token;kind:token_to_text(token)}
+  return {factor:1,kindObj:token,kind:token_to_text(token)}
 }
 Array.prototype.compare = function (other) {
   let moreThis = []
@@ -178,7 +178,7 @@ function token_to_text(token) {
   }
 }
 try {
-  let Tree = tokenize("1*(2^a)")
+  let Tree = tokenize("a*1")
 
   Tree = createSyntaxTree(Tree)[0]
   console.log(Tree)

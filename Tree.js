@@ -10,7 +10,12 @@ function indexWhereOpLevel(tokens, level) {
   }
   return indexes
 }
-
+function tokenPosVal(token){
+  if(token.type="number"){
+    return 0
+  }
+  return token_to_text(token).hashCode()
+}
 function variablesInBlock(token) {
   let variables = []
   if (token.type == "op") {
@@ -68,6 +73,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
 
       let chainStart = 1 + tokenIndex - opChain.length * 2
       let chainLength = 1 + opChain.length * 2
+      opChain=opChain.sort((a,b)=>tokenPosVal(a)-tokenPosVal(b))
       newObj = {
         name,
         type: "opChain",
