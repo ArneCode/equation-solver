@@ -51,6 +51,10 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
   let tokenIndexes = indexWhereOpLevel(tokens, level)
   let indexOff = 0
   let opChain = []
+  /*if(doChain){
+    opChain.push({val0:undefined,val1:tokens[0],type:"op",name})
+  }*/
+
   for (let indexI = 0; indexI < tokenIndexes.length; indexI++) {
     indexI = Number(indexI)
     let tokenIndex = tokenIndexes[indexI] - indexOff
@@ -65,7 +69,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
       type: "op",
       text: token.text
     }
-
+    
     if (nextOpIndex == tokenIndex + 2) {
       opChain.push(newObj)
     } else {

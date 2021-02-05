@@ -178,13 +178,13 @@ function token_to_text(token) {
   }
 }
 try {
-  let Tree = tokenize("a*1")
+  let Tree = tokenize("a^1^3^2")
 
   Tree = createSyntaxTree(Tree)[0]
   console.log(Tree)
-  console.log("token to text:", token_to_text(Tree))
+  /*console.log("token to text:", token_to_text(Tree))
   console.log("result:", reduce_token(Tree))
-  console.log("variables:",variablesInBlock(Tree))
+  console.log("variables:",variablesInBlock(Tree))*/
 } catch (e) {
   console.log(e.stack, e, e.message)
 }
