@@ -10,8 +10,8 @@ function indexWhereOpLevel(tokens, level) {
   }
   return indexes
 }
-function tokenPosVal(token){
-  if(token.type="number"){
+function tokenPosVal(token) {
+  if (token.type == "number") {
     return 0
   }
   return token_to_text(token).hashCode()
@@ -51,12 +51,45 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
   let tokenIndexes = indexWhereOpLevel(tokens, level)
   let indexOff = 0
   let opChain = []
-  /*if(doChain){
-    opChain.push({val0:undefined,val1:tokens[0],type:"op",name})
-  }*/
-
   for (let indexI = 0; indexI < tokenIndexes.length; indexI++) {
-    indexI = Number(indexI)
+    let tokenIndex = tokenIndexes[indexI] - indexOff
+    let token = tokens[tokenIndex]
+    if (doChain) {
+      let valBefore = tokens[tokenIndex - 1]
+      let valAfter = tokens[tokenIndex + 1]
+      let nextOpIndex = tokenIndexes[indexI + 1] - indexOff
+      opChain.push(valBefore)
+      if (nextOpIndex != tokenIndex + 2) {
+        let chainStart = 1 + tokenIndex - opChain.length * 2
+        let chainLength = 1 + opChain.length * 2
+        opChain.push(valAfter)
+        opChain = opChain.sort((a, b) => tokenPosVal(a) - tokenPosVal(b))
+        newObj = {
+          name,
+          type: "opChain",
+          content: opChain,
+          operand: token.text
+        }
+        tokens.splice(chainStart, chainLength, newObj)
+        indexOff += opChain.length
+        opChain = []
+      }
+    } else {
+      let tokenIndex = tokenIndexes[indexI] - indexOff
+      let token = tokens[tokenIndex]
+      let val0 = tokens[tokenIndex - 1]
+      let val1 = tokens[tokenIndex + 1]
+      let newObj = {
+        val0,
+        val1,
+        name,
+        type: "op",
+        operand:token.text
+      }
+      tokens.splice(tokenIndex - 1, 3, newObj)
+      indexOff += 2
+    }
+    /*indexI = Number(indexI)
     let tokenIndex = tokenIndexes[indexI] - indexOff
     let token = tokens[tokenIndex]
     let val0 = tokens[tokenIndex - 1]
@@ -95,7 +128,6 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
 }
 
 function createSyntaxTree(tokens, level = 4) {
-  //console.log("got", tokens)
   if (level == 2) {
     let tokenIndexes = []
     //implementing sign

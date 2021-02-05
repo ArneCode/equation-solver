@@ -47,7 +47,7 @@ function tokenize(text) {
       }
       tokens.push({
         text: curr_token,
-        type: "num",
+        type: "number",
         factor: 1
       })
       //  alert("["+tokens+"]")
@@ -107,7 +107,7 @@ function tokenize(text) {
     }
   }
   for (let token of tokens) {
-    if (token.type == "num") {
+    if (token.type == "number") {
       token.val = Number(token.text)
     } else if (token.type == "op") {
       let op = operands.find(op => op.text == token.text)
@@ -120,5 +120,6 @@ function tokenize(text) {
   }
   return tokens
 }
+
 //alert(NUM.includes("1"))
 //console.log(tokenize("(1+456)+a1.1"))

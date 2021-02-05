@@ -100,11 +100,13 @@ function HSVtoRGB(h, s, v) { //from https://stackoverflow.com/a/17243070
   };
 }
 Array.prototype.eachWeach=function(f){
-  let nlist=new Array(this.length)
+  console.log("eachWeach")
+  let nlist=new Array()
   for(let i1=0;i1<this.length;i1++){
     for(let i2=i1+1;i2<this.length;i2++){
       let elt1=this[i1]
       let elt2=this[i2]
+      console.log("calling f")
       nlist[i1]=f(elt1,elt2)
     }
   }
