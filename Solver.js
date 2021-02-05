@@ -1,31 +1,31 @@
 function solve_equation(part1, part2, searched) {
 
 }
-function tokensBelowLevel(token,level){
-let tokens=[]
-if(token.type=="opChain"){
-for(let elt of token.content){
-if(elt.level<level){
-tokens=tokens.concat(tokensBelowLevel(elt,level))
+function tokensBelowLevel(token, level) {
+  let tokens = []
+  if (token.type == "opChain") {
+    for (let elt of token.content) {
+      if (elt.level < level) {
+        tokens = tokens.concat(tokensBelowLevel(elt, level))
+      }
+    }
+    return tokens
+  } else {
+    return [token]
+  }
+
 }
-}
-  return tokens
-}else{
-  return [token]
-}
-  
-}
-function GroupWOther(group, other,action,level,position) { //multiplies Group and something else
+function GroupWOther(group, other, action, level, position) { //multiplies Group and something else
   let otherText = token_to_text(other)
   let content = group.content
-  let tokens=tokensBelowLevel(content,level)
-let text=""
-  for(let token of tokens){
-    let tokenText=token_to_text(token)
-    if(position=="after"){
-}
-}
-  if (content.type == "opChain") { 
+  let tokens = tokensBelowLevel(content, level)
+  let text = ""
+  for (let token of tokens) {
+    let tokenText = token_to_text(token)
+    if (position == "after") {
+    }
+  }
+  if (content.type == "opChain") {
     if (content.name == "plus") {
       let texts = []
       texts.push(token_to_text(content.content[0].val0))
@@ -48,6 +48,7 @@ let text=""
 }
 
 function reduce_token(token) {
+  console.log("reducing...", token)
   if (token.type == "op") {
     if (token.text == "+") {
       let val0 = reduce_token(token.val0)
@@ -77,9 +78,65 @@ function reduce_token(token) {
 
       }
     }
+  } else if (token.type == "num") {
+    return token.val * token.factor
+  } else if (token.type == "opChain") {
+    if (token.name == "plus") {
+      let nContent = token.content.eachWeach(function (elt1, elt2) {
+        let val1 = reduce_token(elt1)
+        let val2 = reduce_token(elt2)
+        let diff = val1.kind.compare(val2.kind)
+        if (diff == null) {
+          if (val1.kind.length == 0) {
+            let newVal = val1.val + val2.val
+            token.val = newVal
+            token.kind = []
+            return token
+          } else {
+            let newFactor = val0.factor + val1.factor
+            let newToken = val0.kind.join("*")
+            newToken = tokenize(newToken)
+            newToken = createSyntaxTree(newToken)
+            newToken.factor = newFactor
+            return newToken
+          }
+        } else {
+          return token
+        }
+      })
+    }
   }
 }
-Array.prototype.compare = function(other) {
+function getInfo(token){
+  let info={}
+  token=reduce_token(token)
+  if(token.type="opChain"){
+    let content=[...token.content]
+    if(token.name="punkt"){
+      for(let i=0;i<content.length;i++){
+        let subnode=content[i]
+        if(subnode.type=="number"){
+          content.splice(i,1)
+          info.factor=subnode.value
+          if(content.length==1){
+            token.kindObj=content[0]
+          }else{
+            info.kindObj={type:"opChain",name:"punkt",content:content}
+          }
+            info.kind=token_to_text(info.kindObj)
+            return info
+        }
+      }
+    }
+  }else if(token.type=number){
+    return {
+      factor:token.value,
+      kind:""
+    }
+  }
+  return {factor:1;kindObj:token;kind:token_to_text(token)}
+}
+Array.prototype.compare = function (other) {
   let moreThis = []
   let moreOther = []
   let same = []
@@ -121,12 +178,13 @@ function token_to_text(token) {
   }
 }
 try {
-  let Tree = tokenize("2*3*1/a")
+  let Tree = tokenize("1*(2^a)")
 
   Tree = createSyntaxTree(Tree)[0]
   console.log(Tree)
-  console.log(token_to_text(Tree))
-
+  console.log("token to text:", token_to_text(Tree))
+  console.log("result:", reduce_token(Tree))
+  console.log("variables:",variablesInBlock(Tree))
 } catch (e) {
   console.log(e.stack, e, e.message)
 }

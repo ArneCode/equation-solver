@@ -46,7 +46,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
   let tokenIndexes = indexWhereOpLevel(tokens, level)
   let indexOff = 0
   let opChain = []
-  for (let indexI =0;indexI<tokenIndexes.length;indexI++) {
+  for (let indexI = 0; indexI < tokenIndexes.length; indexI++) {
     indexI = Number(indexI)
     let tokenIndex = tokenIndexes[indexI] - indexOff
     let token = tokens[tokenIndex]
@@ -89,7 +89,7 @@ function createSyntaxTree(tokens, level = 4) {
   if (level == 2) {
     let tokenIndexes = []
     //implementing sign
-    for (let i =0;i< tokens.length;i++) {
+    for (let i = 0; i < tokens.length; i++) {
       if (tokens[i].type == "op") {
         if (tokens[i].level == 0) {
           tokenIndexes.push(i);
@@ -99,23 +99,24 @@ function createSyntaxTree(tokens, level = 4) {
     let indexOff = 0
 
     let additionList = []
-    for (let indexI=0 ;indexI<tokenIndexes.length;indexI++) {
+    for (let indexI = 0; indexI < tokenIndexes.length; indexI++) {
       let tokenIndex = tokenIndexes[indexI] - indexOff
       let nextToken = tokens[tokenIndex + 1]
       let operand = tokens[tokenIndex]
-      if(nextToken.type!="op"){
-      if(operand.text=="-"){
-        nextToken.val*=-1
-        if(nextToken.text[0]=="-"){
-nextToken.text=nextToken.text.substr(1)
-}else{
-nextToken.text="-"+nextToken.text
-}
-}}else{
-  if(operand.text=="-"){
-nextToken.text=nextToken.text=="+"?"-":"+"
-}
-}
+      if (nextToken.type != "op") {
+        if (operand.text == "-") {
+          nextToken.val *= -1
+          if (nextToken.text[0] == "-") {
+            nextToken.text = nextToken.text.substr(1)
+          } else {
+            nextToken.text = "-" + nextToken.text
+          }
+        }
+      } else {
+        if (operand.text == "-") {
+          nextToken.text = nextToken.text == "+" ? "-" : "+"
+        }
+      }
       tokens.splice(tokenIndex, 1)
       indexOff++
     }
@@ -125,7 +126,7 @@ nextToken.text=nextToken.text=="+"?"-":"+"
     let tokenIndexes = indexWhereType(tokens, "paranthese")
     let maxIter = tokenIndexes.length
     let iter = -1
-    while (tokenIndexes.length>0&& iter < maxIter) {
+    while (tokenIndexes.length > 0 && iter < maxIter) {
       iter++
       for (let indexI in tokenIndexes) {
         indexI = Number(indexI)
@@ -169,9 +170,9 @@ nextToken.text=nextToken.text=="+"?"-":"+"
   if (level == 1) {
     handleSyntaxOp(tokens, 2, "punkt", true)
   }
-  if(level==0){
-    handleSyntaxOp(tokens,1,"div")
-}
+  if (level == 0) {
+    handleSyntaxOp(tokens, 1, "div")
+  }
   if (level == -1) {
     let i = 0
     while (i < tokens.length) {
@@ -186,9 +187,11 @@ nextToken.text=nextToken.text=="+"?"-":"+"
     }
     handleSyntaxOp(tokens, 0, "plus", true)
   }
-  if (level >= 0){
-    return createSyntaxTree(tokens, level - 1)}
-  else{
+  if (level >= 0) {
+    return createSyntaxTree(tokens, level - 1)
+  }
+  else {
     variablesInBlock(tokens[0])
-  return tokens}
+    return tokens
+  }
 }

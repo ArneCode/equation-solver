@@ -25,7 +25,7 @@ let parantheses = "()"
 let braces = "{}"
 
 function tokenize(text) {
-   alert(text)
+  //alert(text)
   let tokens = []
   let index = 0
   let curr_token = ""
@@ -74,10 +74,10 @@ function tokenize(text) {
       while (index < text.length) {
         index++
         if (operandChars.includes(text[index])) {
-          if("+-".includes(text[index])&&"+-".includes(text[index-1])){
-            tokens.push({text:curr_token,type:"op"})
-curr_token=""
-}
+          if ("+-".includes(text[index]) && "+-".includes(text[index - 1])) {
+            tokens.push({ text: curr_token, type: "op" })
+            curr_token = ""
+          }
           curr_token += text[index]
         } else {
           break
