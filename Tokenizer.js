@@ -26,6 +26,7 @@ let braces = "{}"
 
 function tokenize(text) {
   //alert(text)
+  console.log("tokenizing:",text)
   let tokens = []
   let index = 0
   let curr_token = ""

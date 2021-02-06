@@ -128,3 +128,38 @@ String.prototype.hashCode = function () {
   }
   return hash;
 }
+function clone_entirely(obj){
+  let clone=obj.constructor()
+  if(!["object","array"].includes(typeof obj)){
+    return obj
+  }
+  for(let attr in obj){
+    clone[attr]=clone_entirely(obj[attr])
+  }
+  return clone
+}
+Array.prototype.compare = function (other) {
+  let moreThis = []
+  let moreOther = []
+  let same = []
+  for (let elt of this) {
+    if (!other.includes(elt)) {
+      moreThis.push(elt)
+    } else {
+      same.push(elt)
+    }
+  }
+  for (let elt of other) {
+    if (!this.includes(elt)) {
+      moreOther.push(elt)
+    }
+  }
+  if (moreThis.length > 0 || moreOther.length > 0) {
+    return {
+      diff0: moreThis,
+      diff1: moreOther,
+      same
+    };
+  }
+  return null;
+}

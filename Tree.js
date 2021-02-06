@@ -128,6 +128,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
 }
 
 function createSyntaxTree(tokens, level = 4) {
+  //console.log("syntaxtree",tokens,level)
   if (level == 2) {
     let tokenIndexes = []
     //implementing sign
@@ -164,6 +165,7 @@ function createSyntaxTree(tokens, level = 4) {
     }
 
   }
+
   if (level == 4) {
     let tokenIndexes = indexWhereType(tokens, "paranthese")
     let maxIter = tokenIndexes.length
@@ -209,12 +211,15 @@ function createSyntaxTree(tokens, level = 4) {
     handleSyntaxOp(tokens, 3, "pow")
 
   }
+
   if (level == 1) {
     handleSyntaxOp(tokens, 2, "punkt", true)
   }
+
   if (level == 0) {
     handleSyntaxOp(tokens, 1, "div")
   }
+
   if (level == -1) {
     let i = 0
     while (i < tokens.length) {
@@ -229,6 +234,7 @@ function createSyntaxTree(tokens, level = 4) {
     }
     handleSyntaxOp(tokens, 0, "plus", true)
   }
+
   if (level >= 0) {
     return createSyntaxTree(tokens, level - 1)
   }
@@ -236,4 +242,5 @@ function createSyntaxTree(tokens, level = 4) {
     variablesInBlock(tokens[0])
     return tokens
   }
+  alert("test")
 }

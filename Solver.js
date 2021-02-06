@@ -48,6 +48,7 @@ function GroupWOther(group, other, action, level, position) { //multiplies Group
 }
 
 function reduce_token(token) {
+  console.log("reducing",clone_entirely(token))
   if (token.type == "op") {
     if (token.text == "+") {
       let val0 = reduce_token(token.val0)
@@ -110,7 +111,7 @@ function reduce_token(token) {
             return newToken
           }*/
           let newVal = info1.factor + info2.factor
-          let newText = newVal + "*" + info1.kind
+          let newText = newVal + (info1.kind?("*" + info1.kind):"")
           let {list,i1,i2,restart_loop}=info
           list.splice(i2,1)
           restart_loop()
@@ -140,7 +141,7 @@ function getInfo(token) {
           if (content.length == 1) {
             info.kindObj = content[0]
           } else {
-            info.kindObj = { type: "opChain", name: "punkt", content: content }
+            info.kindObj = { type: "opChain", name: "punkt", content: content , operand:token.operand}
           }
 
           info.kind = token_to_text(info.kindObj)
@@ -156,31 +157,7 @@ function getInfo(token) {
   }
   return { factor: 1, kindObj: token, kind: token_to_text(token) }
 }
-Array.prototype.compare = function (other) {
-  let moreThis = []
-  let moreOther = []
-  let same = []
-  for (let elt of this) {
-    if (!other.includes(elt)) {
-      moreThis.push(elt)
-    } else {
-      same.push(elt)
-    }
-  }
-  for (let elt of other) {
-    if (!this.includes(elt)) {
-      moreOther.push(elt)
-    }
-  }
-  if (moreThis.length > 0 || moreOther.length > 0) {
-    return {
-      diff0: moreThis,
-      diff1: moreOther,
-      same
-    };
-  }
-  return null;
-}
+
 function token_to_text(token) {
   if (token.type.isOf(["number", "word"])) {
     return token.text
@@ -192,15 +169,5 @@ function token_to_text(token) {
     return text
   } else if (token.type == "group") {
     return "(" + token_to_text(token.content) + ")"
-  }
-}
-function start() {
-  try {
-    let Tree = tokenize("2+1")
-    Tree = createSyntaxTree(Tree)[0]
-    console.log({Tree})
-    console.log("result:",reduce_token(Tree))
-  } catch (e) {
-    console.log(e.stack, e, e.message)
   }
 }
