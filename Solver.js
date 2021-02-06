@@ -50,9 +50,9 @@ function GroupWOther(group, other, action, level, position) { //multiplies Group
 function reduce_token(token) {
   console.log("reducing", clone_entirely(token))
   if (token.type == "op") {
+    let val0 = token.val0 = reduce_token(token.val0)
+    let val1 = token.val1 = reduce_token(token.val1)
     if (token.text == "+") {
-      let val0 = reduce_token(token.val0)
-      let val1 = reduce_token(token.val1)
       let info0 = getInfo(val0)
       let info1 = getInfo(val1)
       //let diff = val0.kind.compare(val1.kind)
@@ -67,8 +67,6 @@ function reduce_token(token) {
         return token
       }
     } else if (token.text == "*") {
-      let val0 = reduce_token(token.val0)
-      let val1 = reduce_token(token.val1)
       if (val0.type == "number") {
 
       }
@@ -76,7 +74,7 @@ function reduce_token(token) {
   } else if (token.type == "number") {
     return token
   } else if (token.type == "opChain") {
-
+    token.content = token.content.map(reduce_token)
     if (token.name == "plus") {
 
       token.content.eachWeach(function (elt1, elt2, loop_info) {
@@ -97,26 +95,37 @@ function reduce_token(token) {
         }
       })
       console.log({ content: token_to_text(token) })
+      if (token.content.length == 1) {
+        return token.content[0]
+      }
       return token//nContent.join("+")[0]
-    } else if (token.name = "punkt") {
+    } else if (token.name == "punkt") {
       token.content.eachWeach(function (elt1, elt2, loop_info) {
         let info1 = getInfo(elt1)
         let info2 = getInfo(elt2)
         let { i1, i2, list, restart_loop } = loop_info
 
         if (elt1.name == "pow" || elt2.name == "pow") {
-          let pow,other //pow ist the element in which exponentiation occurs
+          let pow, other //pow ist the element in which exponentiation occurs
           //other is the other element
-          if(elt1.name=="pow"){
-            pow=elt1
-            other=elt2
-          }else{
-            pow=elt2
-            other=elt1
+          if (elt1.name == "pow") {
+            pow = elt1
+            other = elt2
+          } else {
+            pow = elt2
+            other = elt1
           }
-          let powBaseText=token_to_text(pow.val0)
-          let otherText=token_to_text(other)
-          if(powBaseText==)
+          let powBaseText = token_to_text(pow.val0)
+          let otherText = token_to_text(other)
+          if (powBaseText == otherText) {
+            if (pow.val1.type == "number") {
+              let newText = `${powBaseText}^(${token_to_text(pow.val1)}+1)`
+              list[i1] = reduce_token(parse(newText))
+              console.log("list[i1]:",list[i1])
+              list.splice(i2, 1)
+              return restart_loop()
+            }
+          }
         } else if (info1.kind == info2.kind) {
           if (info1.kind == "") {
             let newVal = info1.factor * info2.factor
@@ -133,7 +142,19 @@ function reduce_token(token) {
           }
         }
       })
+      if(token.content.length==1){
+        return token.content[0]
+      }
       return token
+    }
+  } else if (token.type == "group") {
+    console.log("here")
+    token.content = reduce_token(token.content)
+    let { content } = token
+    console.log("here too", content)
+    if (["number", "word", "group"].includes(content.type) || ["pow", "punkt"].includes(content.name)) {
+      console.log("is included", content)
+      return content
     }
   }
   return token
@@ -170,7 +191,7 @@ function getInfo(token) {
 }
 
 function token_to_text(token) {
-  console.log("totext:", token)
+  //console.log("totext:", token)
   if (token.type.isOf(["number", "word"])) {
     return token.text
   } else if (token.type == "op") {

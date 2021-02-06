@@ -71,7 +71,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
           operand: token.text
         }
         tokens.splice(chainStart, chainLength, newObj)
-        indexOff += chainLength-1
+        indexOff += chainLength - 1
         opChain = []
       }
     } else {
@@ -84,7 +84,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
         val1,
         name,
         type: "op",
-        operand:token.text
+        operand: token.text
       }
       tokens.splice(tokenIndex - 1, 3, newObj)
       indexOff += 2
@@ -244,6 +244,6 @@ function createSyntaxTree(tokens, level = 4) {
   }
   alert("test")
 }
-function parse(text){
+function parse(text) {
   return createSyntaxTree(tokenize(text))[0]
 }
