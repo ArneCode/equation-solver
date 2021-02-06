@@ -25,6 +25,12 @@ let parantheses = "()"
 let braces = "{}"
 
 function tokenize(text) {
+  if(!(typeof text=="string")){
+    throw new Error("input to tokenize must be a string, not"+text)
+  }
+  if(text==""){
+    throw new Error("input to tokenize cannot be empty string")
+  }
   //alert(text)
   console.log("tokenizing:",text)
   let tokens = []
@@ -121,5 +127,3 @@ function tokenize(text) {
   }
   return tokens
 }
-
-//alert(NUM.includes("1"))

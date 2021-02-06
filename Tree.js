@@ -244,3 +244,6 @@ function createSyntaxTree(tokens, level = 4) {
   }
   alert("test")
 }
+function parse(text){
+  return createSyntaxTree(tokenize(text))[0]
+}

@@ -36,19 +36,19 @@ function GroupWOther(group, other, action, level, position) { //multiplies Group
         text = otherText + "*" + text
       }
       let text = texts.join("+")
-      let newTree = createSyntaxTree(tokenize(text))
+      let newTree = parse(text)
       return newTree
     } else {
       let text = token_to_text(content)
       text += "*" + otherText
-      let newTree = createSyntaxTree(tokenize(text))
+      let newTree = parse(text)
       return newTree
     }
   }
 }
 
 function reduce_token(token) {
-  console.log("reducing",clone_entirely(token))
+  console.log("reducing", clone_entirely(token))
   if (token.type == "op") {
     if (token.text == "+") {
       let val0 = reduce_token(token.val0)
@@ -62,14 +62,6 @@ function reduce_token(token) {
           token.val = newVal
           token.kind = []
           return token
-        } else {
-          /*let newFactor = val0.factor + val1.factor
-          let newToken = val0.kind.join("*")
-          newToken = tokenize(newToken)
-          newToken = createSyntaxTree(newToken)
-          newToken.factor = newFactor
-          return newToken*/
-
         }
       } else {
         return token
@@ -87,7 +79,7 @@ function reduce_token(token) {
 
     if (token.name == "plus") {
 
-      let nContent = token.content.eachWeach(function (elt1, elt2,info) {
+      token.content.eachWeach(function (elt1, elt2, loop_info) {
 
         /*let val1 = reduce_token(elt1)
         let val2 = reduce_token(elt2)*/
@@ -96,33 +88,52 @@ function reduce_token(token) {
 
         //let diff = val1.kind.compare(val2.kind)
         if (info1.kind == info2.kind) {
-          /*
-          if (info1.kind.length == 0) {
-            let newVal = val1.val + val2.val
-            token.val = newVal
-            token.kind = []
-            return token
-          } else {
-            let newFactor = val0.factor + val1.factor
-            let newToken = val0.kind.join("*")
-            newToken = tokenize(newToken)
-            newToken = createSyntaxTree(newToken)
-            newToken.factor = newFactor
-            return newToken
-          }*/
           let newVal = info1.factor + info2.factor
-          let newText = newVal + (info1.kind?("*" + info1.kind):"")
-          let {list,i1,i2,restart_loop}=info
-          list.splice(i2,1)
+          let newText = newVal + (info1.kind ? ("*" + info1.kind) : "")
+          let { list, i1, i2, restart_loop } = loop_info
+          list.splice(i2, 1)
           restart_loop()
-          list[i1]=createSyntaxTree(tokenize(newText))[0]
-          return newText
-        } else {
-          return token_to_text(token)
+          list[i1] = parse(newText)
         }
       })
+      console.log({ content: token_to_text(token) })
+      return token//nContent.join("+")[0]
+    } else if (token.name = "punkt") {
+      token.content.eachWeach(function (elt1, elt2, loop_info) {
+        let info1 = getInfo(elt1)
+        let info2 = getInfo(elt2)
+        let { i1, i2, list, restart_loop } = loop_info
 
-      return createSyntaxTree(tokenize(nContent.join("+")))[0]
+        if (elt1.name == "pow" || elt2.name == "pow") {
+          let pow,other //pow ist the element in which exponentiation occurs
+          //other is the other element
+          if(elt1.name=="pow"){
+            pow=elt1
+            other=elt2
+          }else{
+            pow=elt2
+            other=elt1
+          }
+          let powBaseText=token_to_text(pow.val0)
+          let otherText=token_to_text(other)
+          if(powBaseText==)
+        } else if (info1.kind == info2.kind) {
+          if (info1.kind == "") {
+            let newVal = info1.factor * info2.factor
+            console.log("newVal", newVal)
+            list[i1] = tokenize(String(newVal))[0]
+            console.log("list:", clone_entirely(list))
+            list.splice(i2, 1)
+            return restart_loop()
+          } else {
+            let newText = token_to_text(elt1) + "^2"
+            list[i1] = parse(newText)
+            list.splice(i2, 1)
+            return restart_loop
+          }
+        }
+      })
+      return token
     }
   }
   return token
@@ -141,7 +152,7 @@ function getInfo(token) {
           if (content.length == 1) {
             info.kindObj = content[0]
           } else {
-            info.kindObj = { type: "opChain", name: "punkt", content: content , operand:token.operand}
+            info.kindObj = { type: "opChain", name: "punkt", content: content, operand: token.operand }
           }
 
           info.kind = token_to_text(info.kindObj)
@@ -159,6 +170,7 @@ function getInfo(token) {
 }
 
 function token_to_text(token) {
+  console.log("totext:", token)
   if (token.type.isOf(["number", "word"])) {
     return token.text
   } else if (token.type == "op") {
