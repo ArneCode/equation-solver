@@ -48,7 +48,6 @@ function GroupWOther(group, other, action, level, position) { //multiplies Group
 }
 
 function reduce_token(token) {
-  console.log("reducing...", token)
   if (token.type == "op") {
     if (token.text == "+") {
       let val0 = reduce_token(token.val0)
@@ -84,16 +83,16 @@ function reduce_token(token) {
   } else if (token.type == "number") {
     return token
   } else if (token.type == "opChain") {
-    console.log("is opchain", token)
+
     if (token.name == "plus") {
-      console.log("is plus", token)
-      let nContent = token.content.eachWeach(function (elt1, elt2) {
-        console.log("in f", { elt1, elt2 })
+
+      let nContent = token.content.eachWeach(function (elt1, elt2,info) {
+
         /*let val1 = reduce_token(elt1)
         let val2 = reduce_token(elt2)*/
         let info1 = getInfo(elt1)
         let info2 = getInfo(elt2)
-        console.log({  info1, info2 })
+
         //let diff = val1.kind.compare(val2.kind)
         if (info1.kind == info2.kind) {
           /*
@@ -112,20 +111,23 @@ function reduce_token(token) {
           }*/
           let newVal = info1.factor + info2.factor
           let newText = newVal + "*" + info1.kind
-          console.log({ newText })
+          let {list,i1,i2,restart_loop}=info
+          list.splice(i2,1)
+          restart_loop()
+          list[i1]=createSyntaxTree(tokenize(newText))[0]
           return newText
         } else {
           return token_to_text(token)
         }
       })
-      console.log({nContent})
+
       return createSyntaxTree(tokenize(nContent.join("+")))[0]
     }
   }
   return token
 }
 function getInfo(token) {
-  console.log("requesting info about:",token)
+
   let info = {}
   if (token.type == "opChain") {
     let content = [...token.content]
@@ -140,7 +142,7 @@ function getInfo(token) {
           } else {
             info.kindObj = { type: "opChain", name: "punkt", content: content }
           }
-          console.log({kinfObj:info.kindObj})
+
           info.kind = token_to_text(info.kindObj)
           return info
         }
@@ -180,7 +182,6 @@ Array.prototype.compare = function (other) {
   return null;
 }
 function token_to_text(token) {
-  console.log("to text:",token)
   if (token.type.isOf(["number", "word"])) {
     return token.text
   } else if (token.type == "op") {
@@ -195,13 +196,10 @@ function token_to_text(token) {
 }
 function start() {
   try {
-    let Tree = tokenize("2*b+1*b")
+    let Tree = tokenize("2+1")
     Tree = createSyntaxTree(Tree)[0]
-    console.log(Tree)
-    console.log("token to text:", token_to_text(Tree))
-    //console.log("info:", getInfo(Tree))
-    console.log("result:", token_to_text(reduce_token(Tree)))
-    //console.log("variables:",variablesInBlock(Tree))
+    console.log({Tree})
+    console.log("result:",reduce_token(Tree))
   } catch (e) {
     console.log(e.stack, e, e.message)
   }

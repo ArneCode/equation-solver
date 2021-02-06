@@ -71,7 +71,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
           operand: token.text
         }
         tokens.splice(chainStart, chainLength, newObj)
-        indexOff += opChain.length
+        indexOff += chainLength-1
         opChain = []
       }
     } else {

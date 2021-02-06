@@ -122,4 +122,3 @@ function tokenize(text) {
 }
 
 //alert(NUM.includes("1"))
-//console.log(tokenize("(1+456)+a1.1"))

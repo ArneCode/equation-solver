@@ -99,26 +99,32 @@ function HSVtoRGB(h, s, v) { //from https://stackoverflow.com/a/17243070
     b: Math.round(b * 255)
   };
 }
-Array.prototype.eachWeach=function(f){
-  console.log("eachWeach")
-  let nlist=new Array()
-  for(let i1=0;i1<this.length;i1++){
-    for(let i2=i1+1;i2<this.length;i2++){
-      let elt1=this[i1]
-      let elt2=this[i2]
-      console.log("calling f")
-      nlist[i1]=f(elt1,elt2)
+Array.prototype.eachWeach = function (f) {
+
+  let nlist = new Array()
+  let restart
+  let restart_func = function(val = true){restart = val}
+  for (let i1 = 0; i1 < this.length; i1++) {
+    restart = true
+    while (restart) {
+      restart = false
+      for (let i2 = i1 + 1; i2 < this.length; i2++) {
+        let elt1 = this[i1]
+        let elt2 = this[i2]
+
+        nlist[i1] = f(elt1, elt2,{i1,i2,list:this,restart_loop:restart_func})
+      }
     }
   }
   return nlist
 }
-String.prototype.hashCode=function(){
+String.prototype.hashCode = function () {
   //from https://stackoverflow.com/a/7616484
-    let hash = 0, i, chr;
-    for (i = 0; i < this.length; i++) {
-      chr   = this.charCodeAt(i);
-      hash  = ((hash << 5) - hash) + chr;
-      hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
+  let hash = 0, i, chr;
+  for (i = 0; i < this.length; i++) {
+    chr = this.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
 }
