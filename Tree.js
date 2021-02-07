@@ -10,11 +10,17 @@ function indexWhereOpLevel(tokens, level) {
   }
   return indexes
 }
-function tokenPosVal(token) {
+function tokenPosVal(token,valfirst=false) {
   if (token.type == "number") {
     return 0
+  }else if(token.name=="pow"){
+    if(token.val1.type=="number"){
+      return -token.val1.val
+    }
+  }else if(token.type=="word"&&valfirst){
+    return -1
   }
-  return token_to_text(token).hashCode()
+  return Math.abs(token_to_text(token).hashCode())
 }
 function variablesInBlock(token) {
   let variables = []
@@ -47,7 +53,7 @@ function indexWhereType(tokens, type) {
   return indexes
 }
 
-function handleSyntaxOp(tokens, level, name, doChain = false) {
+function handleSyntaxOp(tokens, level, name, doChain = false,valfirst=false) {
   let tokenIndexes = indexWhereOpLevel(tokens, level)
   let indexOff = 0
   let opChain = []
@@ -63,12 +69,13 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
         let chainStart = 1 + tokenIndex - opChain.length * 2
         let chainLength = 1 + opChain.length * 2
         opChain.push(valAfter)
-        opChain = opChain.sort((a, b) => tokenPosVal(a) - tokenPosVal(b))
+        opChain = opChain.sort((a, b) => tokenPosVal(a,valfirst) - tokenPosVal(b,valfirst))
         newObj = {
           name,
           type: "opChain",
           content: opChain,
-          operand: token.text
+          operand: token.text,
+          level:token.level
         }
         tokens.splice(chainStart, chainLength, newObj)
         indexOff += chainLength - 1
@@ -84,7 +91,8 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
         val1,
         name,
         type: "op",
-        operand: token.text
+        operand: token.text,
+        level:token.level
       }
       tokens.splice(tokenIndex - 1, 3, newObj)
       indexOff += 2
@@ -127,7 +135,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
   }
 }
 
-function createSyntaxTree(tokens, level = 4) {
+function createSyntaxTree(tokens, level = 4,valfirst=false) {
   //console.log("syntaxtree",tokens,level)
   if (level == 2) {
     let tokenIndexes = []

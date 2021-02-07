@@ -32,7 +32,7 @@ function tokenize(text) {
     throw new Error("input to tokenize cannot be empty string")
   }
   //alert(text)
-  console.log("tokenizing:",text)
+  //console.log("tokenizing:",text)
   let tokens = []
   let index = 0
   let curr_token = ""

@@ -1,6 +1,7 @@
 function start() {
   try {
-    let Tree = tokenize("a^2*a")
+    let Tree = tokenize("2*2")//a*b*2+b*a*3
+    console.log(clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log({Tree})
     console.log(token_to_text(Tree))
