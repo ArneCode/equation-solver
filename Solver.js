@@ -81,6 +81,7 @@ function reduce_token(token) {
       }else if(val0.type=="number"&&val1.type=="number"){
         let newVal=val0.val/val1.val
         val0.val=newVal
+        val0.text=String(newVal)
         return val0
       }
     }
@@ -128,8 +129,19 @@ function reduce_token(token) {
         let info1 = getInfo(elt1)
         let info2 = getInfo(elt2)
         let { i1, i2, list, restart_loop } = loop_info
-
-        if (elt1.name == "pow" || elt2.name == "pow") {
+        if(elt1.name == "pow" && elt2.name == "pow"){
+          let base1Text=token_to_text(elt1.val0)
+          let base2Text=token_to_text(elt2.val0)
+          if(base1Text==base2Text){
+            let newExpText=`(${token_to_text(elt1.val1)}+${token_to_text(elt2.val1)})`
+            let newExp=parse(newExpText)
+            newExp=reduce_token(newExp)
+            elt1.val1=newExp
+            list.splice(i2,1)
+            return restart_loop()
+          }
+        }
+        else if (elt1.name == "pow" || elt2.name == "pow") {
           let pow, other //pow ist the element in which exponentiation occurs
           //other is the other element
           if (elt1.name == "pow") {
@@ -161,6 +173,19 @@ function reduce_token(token) {
             list.splice(i2, 1)
             return restart_loop
           }
+        }else if(elt1.name=="div"&&elt2.name=="div"){
+
+        }
+        else if(elt1.name=="div"||elt2.name=="div"){
+          let div,other
+          if(elt1.name=="div"){
+            div=elt1
+            other=elt2
+          }else{
+            div=elt2
+            other=elt1
+          }
+          
         }
       })
       if(token.content.length==1){
