@@ -1,12 +1,9 @@
 let NUM = "0123456789"
 let NUMDOT = NUM + "."
 let ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
-let operandChars = "+-*/^%&|."
+let operandChars = "+*/^%&|."
 let operands = [{
   text: "+",
-  level: 0
-}, {
-  text: "-",
   level: 0
 }, {
   text: "*",
@@ -37,9 +34,42 @@ function tokenize(text) {
   let index = 0
   let curr_token = ""
   while (index < text.length) {
-    if (NUM.includes(text[index])) {
+    if ((NUM+"-").includes(text[index])) {
+      let numrx=RegExp(/^(\+|-)?\d+(\.\d+)?([eE](\+|-)?\d+)?/)
+      //alert("substr: "+text.substr(index)+"\nindex: "+index)
+      //numrx.exec(text.substr(index))
+      let subtext=text.substr(index)
+      let match=subtext.match(numrx)
+      if(match){
+      let numlength=match[0].length
+      console.log({numlength,subtext,index})
+      if(numlength>0){
+        let numText=text.substr(index,numlength)
+        let val=Number(numText)
+        tokens.push({
+        text: numText,
+        val,
+        type: "number",
+        factor: 1
+      })
+        index+=numlength
+        }
+      }else if([undefined,"("].includes(text[index-1])){
+        tokens.push({
+          text:"-",
+          type:"sign",
+          factor:1
+        })
+        index++
+      }else{
+        tokens.push({
+          text:"-",
+          level:0,
+          type:"op"
+        })
+      }
       //alert(text[index])
-      curr_token = text[index]
+      /*curr_token = text[index]
       while (index < text.length) {
         index++
         if (NUMDOT.includes(text[index])) {
@@ -59,7 +89,7 @@ function tokenize(text) {
       })
       //  alert("["+tokens+"]")
       //alert(tokens.length)
-      curr_token = ""
+      curr_token = ""*/
     } else if (ALPHA.includes(text[index])) {
       curr_token = text[index]
       while (index < text.length) {

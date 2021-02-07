@@ -15,42 +15,44 @@ function tokensBelowLevel(token, level) {
   }
 
 }
-function groupWother(a,b,params/*{operandText,operandObj}*/){
-  a=reduce_token(a)
-  b=reduce_token(b)
-  let {operandObj,operandText}=params
-  let group,other
-  if(a.type=="group"){
-    group=a
-    other=b
-  }else if(b.type=="group"){
-    group=b
-    other=a
-  }else{
+function groupWother(a, b, params/*{operandText,operandObj}*/) {
+  a = reduce_token(a)
+  b = reduce_token(b)
+  let { operandObj, operandText } = params
+  let group, other
+  if (a.type == "group") {
+    group = a
+    other = b
+  } else if (b.type == "group") {
+    group = b
+    other = a
+  } else {
     return null
   }
-  let gContent=group.content
-  let otherText=token_to_text(other)
-  if(gContent.level>=operandObj.level){
-    let newText=token_to_text(gContent)+operandText+otherText
-    let newToken=parse(newText)
-    newToken=reduce_token(newToken)
+  let gContent = group.content
+  let otherText = token_to_text(other)
+  if (gContent.level >= operandObj.level) {
+    let newText = token_to_text(gContent) + operandText + otherText
+    let newToken = parse(newText)
+    newToken = reduce_token(newToken)
     return newToken
-  }else{
-    let newTexts=[]
-    let content=[]//subnodes of content in group
-    if(gContent.type=="op"){
-      content=[gContent.val0,gContent.val1]
-    }else if(gContent.type=="opChain"){
-      content=gContent.content
+  } else if(!(other.name=="pow"&&gContent.level==0)){
+    console.log("inside")
+    let newTexts = []
+    let content = []//subnodes of content in group
+    if (gContent.type == "op") {
+      content = [gContent.val0, gContent.val1]
+    } else if (gContent.type == "opChain") {
+      content = gContent.content
     }
-    for(let subnode of content){
-      let text=token_to_text(subnode)+operandText+otherText
+    for (let subnode of content) {
+      let text = token_to_text(subnode) + operandText + otherText
       newTexts.push(text)
     }
-    let newText=newTexts.join(gContent.operand)
-    let newToken=parse(newText)
-    newToken=reduce_token(newToken)
+    let newText = newTexts.join(gContent.operand)
+    console.log("here",{newTexts,newText})
+    let newToken = parse(newText)
+    newToken = reduce_token(newToken)
     return newToken
   }
   return null
@@ -60,28 +62,28 @@ function reduce_token(token) {
   if (token.type == "op") {
     let val0 = token.val0 = reduce_token(token.val0)
     let val1 = token.val1 = reduce_token(token.val1)
-    let gwotherResult=groupWother(val0,val1,{operandText:token.operand,operandObj:token})
-    if(gwotherResult){
-      return gwotherResult
-    }
-    if(token.name=="pow"){
-      if(val0.name=="pow"){
-        let newBaseExpText="("+token_to_text(val0.val1)+"*"+token_to_text(val1)+")"
-        val0.val1=reduce_token(parse(newBaseExpText))
+    if (token.name == "pow") {
+      if (val0.name == "pow") {
+        let newBaseExpText = "(" + token_to_text(val0.val1) + "*" + token_to_text(val1) + ")"
+        val0.val1 = reduce_token(parse(newBaseExpText))
         return val0
-      }else if(val1.type=="number"){
-        if(val0.type=="number"){
-          let newVal=val0.val**val1.val
+      } else if (val1.type == "number") {
+        if (val0.type == "number") {
+          let newVal = val0.val ** val1.val
           return parse(String(newVal))
         }
       }
-    }else if(token.name=="div"){
-      if(token_to_text(val0)==token_to_text(val1)){
+    } else if (token.name == "div") {
+      let gwotherResult = groupWother(val0, val1, { operandText: token.operand, operandObj: token })
+      if (gwotherResult) {
+        return gwotherResult
+      }
+      if (token_to_text(val0) == token_to_text(val1)) {
         return parse("1")
-      }else if(val0.type=="number"&&val1.type=="number"){
-        let newVal=val0.val/val1.val
-        val0.val=newVal
-        val0.text=String(newVal)
+      } else if (val0.type == "number" && val1.type == "number") {
+        let newVal = val0.val / val1.val
+        val0.val = newVal
+        val0.text = String(newVal)
         return val0
       }
     }
@@ -89,16 +91,16 @@ function reduce_token(token) {
     return token
   } else if (token.type == "opChain") {
     token.content = token.content.map(reduce_token)
-    token.content.eachWeach(function(elt1,elt2,loop_info){
-      let {i1,i2,list,restart_loop}=loop_info
-      let result=groupWother(elt1,elt2,{operandText:token.operand,operandObj:token})
-      if(result){
-        list[i1]=result
-        list.splice(i2,1)
+    token.content.eachWeach(function (elt1, elt2, loop_info) {
+      let { i1, i2, list, restart_loop } = loop_info
+      let result = groupWother(elt1, elt2, { operandText: token.operand, operandObj: token })
+      if (result) {
+        list[i1] = result
+        list.splice(i2, 1)
         return restart_loop()
       }
     })
-    if(token.content.length==1){
+    if (token.content.length == 1) {
       return token.content[0]
     }
     if (token.name == "plus") {
@@ -129,15 +131,15 @@ function reduce_token(token) {
         let info1 = getInfo(elt1)
         let info2 = getInfo(elt2)
         let { i1, i2, list, restart_loop } = loop_info
-        if(elt1.name == "pow" && elt2.name == "pow"){
-          let base1Text=token_to_text(elt1.val0)
-          let base2Text=token_to_text(elt2.val0)
-          if(base1Text==base2Text){
-            let newExpText=`(${token_to_text(elt1.val1)}+${token_to_text(elt2.val1)})`
-            let newExp=parse(newExpText)
-            newExp=reduce_token(newExp)
-            elt1.val1=newExp
-            list.splice(i2,1)
+        if (elt1.name == "pow" && elt2.name == "pow") {
+          let base1Text = token_to_text(elt1.val0)
+          let base2Text = token_to_text(elt2.val0)
+          if (base1Text == base2Text) {
+            let newExpText = `(${token_to_text(elt1.val1)}+${token_to_text(elt2.val1)})`
+            let newExp = parse(newExpText)
+            newExp = reduce_token(newExp)
+            elt1.val1 = newExp
+            list.splice(i2, 1)
             return restart_loop()
           }
         }
@@ -168,27 +170,44 @@ function reduce_token(token) {
             list.splice(i2, 1)
             return restart_loop()
           } else {
-            let newText = token_to_text(elt1) + "^2"
-            list[i1] = parse(newText)
+            let newText = "("+token_to_text(elt1)+")" + "^2"
+            list[i1] = reduce_token(parse(newText))
             list.splice(i2, 1)
             return restart_loop
           }
-        }else if(elt1.name=="div"&&elt2.name=="div"){
-
         }
-        else if(elt1.name=="div"||elt2.name=="div"){
-          let div,other
-          if(elt1.name=="div"){
-            div=elt1
-            other=elt2
-          }else{
-            div=elt2
-            other=elt1
+        else if (elt1.val == 1) {
+          list[i1]=elt2
+          list.splice(i2, 1)
+          restart_loop()
+        }
+        else if (elt2.val == 1) {
+          list.splice(i2, 1)
+          restart_loop()
+        }
+        else if (elt1.name == "div" && elt2.name == "div") {
+          return
+        }
+        else if (elt1.name == "div" || elt2.name == "div") {
+          let div, other
+          if (elt1.name == "div") {
+            div = elt1
+            other = elt2
+          } else {
+            div = elt2
+            other = elt1
           }
-          
+          let testText = "(" + token_to_text(other) + "/" + token_to_text(div.val1) + ")"
+          let testToken = parse(testText)
+          testToken = reduce_token(testToken)
+          if (token_to_text(testToken) != testText) {
+            list[i1] = div.val0
+            list[i2] = testToken
+            return restart_loop()
+          }
         }
       })
-      if(token.content.length==1){
+      if (token.content.length == 1) {
         return token.content[0]
       }
       return token

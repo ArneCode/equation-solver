@@ -65,7 +65,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false, valnfirst = true) 
       let valAfter = tokens[tokenIndex + 1]
       let nextOpIndex = tokenIndexes[indexI + 1] - indexOff
       opChain.push(valBefore)
-      if (nextOpIndex != tokenIndex + 2) {
+      if (nextOpIndex != tokenIndex + 2||tokens[nextOpIndex].text!=token.text) {
         let chainStart = 1 + tokenIndex - opChain.length * 2
         let chainLength = 1 + opChain.length * 2
         opChain.push(valAfter)
@@ -118,7 +118,7 @@ function createSyntaxTree(tokens, level = 4, valnfirst = true) {
       let tokenIndex = tokenIndexes[indexI] - indexOff
       let nextToken = tokens[tokenIndex + 1]
       let operand = tokens[tokenIndex]
-      if (!["op","opChain"].includes(nextToken.type)) {
+      if (!["op", "opChain"].includes(nextToken.type)) {
         if (operand.text == "-") {
           nextToken.val *= -1
           if (nextToken.text[0] == "-") {
