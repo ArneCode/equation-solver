@@ -1,6 +1,6 @@
 function start() {
   try {
-    let Tree = tokenize("2*2")//a*b*2+b*a*3
+    let Tree = tokenize("2*a/2")
     console.log(clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log({Tree})
@@ -17,10 +17,11 @@ function reduce_completely(token){
   let result=reduce_token(token)
   let resultText=token_to_text(result)
   while(!before.includes(resultText)){
-    console.log("new loop")
+    console.log("new loop",token_to_text(result))
     before.push(resultText)
-    result=reduce_token(result)
+    result=reduce_token(parse(resultText))
     resultText=token_to_text(result)
+    console.log("result after reducing again:",{result,resultText})
   }
   console.log("finished loop",{before,resultText,result})
   return result

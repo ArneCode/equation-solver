@@ -1,5 +1,5 @@
 function indexWhereOpLevel(tokens, level) {
-  //gives back indexes of tokens whose level=level
+  //gives back indexes of tokens whose level==level given as parameter
   let indexes = []
   for (let i in tokens) {
     if (tokens[i].type == "op") {
@@ -10,14 +10,14 @@ function indexWhereOpLevel(tokens, level) {
   }
   return indexes
 }
-function tokenPosVal(token,valfirst=false) {
+function tokenPosVal(token,valnfirst=true) {
   if (token.type == "number") {
     return 0
-  }else if(token.name=="pow"){
+  }else if(token.name=="pow"&&!valnfirst){
     if(token.val1.type=="number"){
       return -token.val1.val
     }
-  }else if(token.type=="word"&&valfirst){
+  }else if(token.type=="word"&&!valnfirst){
     return -1
   }
   return Math.abs(token_to_text(token).hashCode())
@@ -53,7 +53,7 @@ function indexWhereType(tokens, type) {
   return indexes
 }
 
-function handleSyntaxOp(tokens, level, name, doChain = false,valfirst=false) {
+function handleSyntaxOp(tokens, level, name, doChain = false,valnfirst=true) {
   let tokenIndexes = indexWhereOpLevel(tokens, level)
   let indexOff = 0
   let opChain = []
@@ -69,7 +69,7 @@ function handleSyntaxOp(tokens, level, name, doChain = false,valfirst=false) {
         let chainStart = 1 + tokenIndex - opChain.length * 2
         let chainLength = 1 + opChain.length * 2
         opChain.push(valAfter)
-        opChain = opChain.sort((a, b) => tokenPosVal(a,valfirst) - tokenPosVal(b,valfirst))
+        opChain = opChain.sort((a, b) => tokenPosVal(a,valnfirst) - tokenPosVal(b,valnfirst))
         newObj = {
           name,
           type: "opChain",
@@ -97,46 +97,10 @@ function handleSyntaxOp(tokens, level, name, doChain = false,valfirst=false) {
       tokens.splice(tokenIndex - 1, 3, newObj)
       indexOff += 2
     }
-    /*indexI = Number(indexI)
-    let tokenIndex = tokenIndexes[indexI] - indexOff
-    let token = tokens[tokenIndex]
-    let val0 = tokens[tokenIndex - 1]
-    let val1 = tokens[tokenIndex + 1]
-    let nextOpIndex = tokenIndexes[indexI + 1] - indexOff
-    let newObj = {
-      name,
-      val0,
-      val1,
-      type: "op",
-      text: token.text
-    }
-    
-    if (nextOpIndex == tokenIndex + 2) {
-      opChain.push(newObj)
-    } else {
-      opChain.push(newObj)
-
-      let chainStart = 1 + tokenIndex - opChain.length * 2
-      let chainLength = 1 + opChain.length * 2
-      opChain=opChain.sort((a,b)=>tokenPosVal(a)-tokenPosVal(b))
-      newObj = {
-        name,
-        type: "opChain",
-        content: opChain
-      }
-      tokens.splice(chainStart, chainLength, newObj)
-
-      indexOff += opChain.length
-      opChain = []
-    }/* else {
-      tokens.splice(tokenIndex - 1, 3, newObj)
-      indexOff += 2
-    }*/
   }
 }
 
-function createSyntaxTree(tokens, level = 4,valfirst=false) {
-  //console.log("syntaxtree",tokens,level)
+function createSyntaxTree(tokens, level = 4,valnfirst=true) {
   if (level == 2) {
     let tokenIndexes = []
     //implementing sign
@@ -220,12 +184,12 @@ function createSyntaxTree(tokens, level = 4,valfirst=false) {
 
   }
 
-  if (level == 1) {
-    handleSyntaxOp(tokens, 2, "punkt", true)
+  if (level == 0) {
+    handleSyntaxOp(tokens, 1, "punkt", true)
   }
 
-  if (level == 0) {
-    handleSyntaxOp(tokens, 1, "div")
+  if (level == 1) {
+    handleSyntaxOp(tokens, 2, "div")
   }
 
   if (level == -1) {

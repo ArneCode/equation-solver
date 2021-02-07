@@ -18,6 +18,7 @@ function tokensBelowLevel(token, level) {
 function groupWother(a,b,params/*{operandText,operandObj}*/){
   a=reduce_token(a)
   b=reduce_token(b)
+  let {operandObj,operandText}=params
   let group,other
   if(a.type=="group"){
     group=a
@@ -28,17 +29,34 @@ function groupWother(a,b,params/*{operandText,operandObj}*/){
   }else{
     return null
   }
-  if(group.content.level>=params.operandObj.level){
-    let newText=token_to_text(group.content)+params.operandText+token_to_text(other)
+  let gContent=group.content
+  let otherText=token_to_text(other)
+  if(gContent.level>=operandObj.level){
+    let newText=token_to_text(gContent)+operandText+otherText
     let newToken=parse(newText)
     newToken=reduce_token(newToken)
     return newToken
   }else{
-    
+    let newTexts=[]
+    let content=[]//subnodes of content in group
+    if(gContent.type=="op"){
+      content=[gContent.val0,gContent.val1]
+    }else if(gContent.type=="opChain"){
+      content=gContent.content
+    }
+    for(let subnode of content){
+      let text=token_to_text(subnode)+operandText+otherText
+      newTexts.push(text)
+    }
+    let newText=newTexts.join(gContent.operand)
+    let newToken=parse(newText)
+    newToken=reduce_token(newToken)
+    return newToken
   }
   return null
 }
 function reduce_token(token) {
+  //console.log("reducing...",token_to_text(token))
   if (token.type == "op") {
     let val0 = token.val0 = reduce_token(token.val0)
     let val1 = token.val1 = reduce_token(token.val1)
@@ -56,6 +74,14 @@ function reduce_token(token) {
           let newVal=val0.val**val1.val
           return parse(String(newVal))
         }
+      }
+    }else if(token.name=="div"){
+      if(token_to_text(val0)==token_to_text(val1)){
+        return parse("1")
+      }else if(val0.type=="number"&&val1.type=="number"){
+        let newVal=val0.val/val1.val
+        val0.val=newVal
+        return val0
       }
     }
   } else if (token.type == "number") {
