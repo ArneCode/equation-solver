@@ -164,10 +164,10 @@ function createSyntaxTree(tokens, level = 4, valnfirst = true) {
               break;
             }
           } else {
-            throw "unmatching Brackets0"
+            throw new Error("unmatching Brackets0")
           }
         } else {
-          throw "unmatching Brackets1"
+          throw new Error("unmatching Brackets1")
         }
       }
     }

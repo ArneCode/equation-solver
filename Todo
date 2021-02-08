@@ -1,0 +1,6 @@
+# Fix error with division
+  Examples:
+    1/1/a^2
+    1/(1/a^2)
+    1/a^-2
+# Add Stuff with Minus

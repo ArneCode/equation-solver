@@ -29,7 +29,6 @@ function tokenize(text) {
     throw new Error("input to tokenize cannot be empty string")
   }
   //alert(text)
-  //console.log("tokenizing:",text)
   let tokens = []
   let index = 0
   let curr_token = ""
@@ -42,7 +41,6 @@ function tokenize(text) {
       let match=subtext.match(numrx)
       if(match){
       let numlength=match[0].length
-      console.log({numlength,subtext,index})
       if(numlength>0){
         let numText=text.substr(index,numlength)
         let val=Number(numText)
@@ -140,7 +138,7 @@ function tokenize(text) {
       });
       index++;
     } else {
-      throw `error: unexpected character at index ${index}, character:${text[index]}`
+      throw new Error(`error: unexpected character at index ${index}, character:${text[index]}`)
     }
   }
   for (let token of tokens) {
@@ -151,7 +149,7 @@ function tokenize(text) {
       if (op != undefined) {
         token.level = op.level
       } else {
-        throw (`error at ${tokens.indexOf(token)}: operand ${token.text} is unknown`)
+        throw new Error(`error at ${tokens.indexOf(token)}: operand ${token.text} is unknown`)
       }
     }
   }

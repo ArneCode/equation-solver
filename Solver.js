@@ -1,5 +1,98 @@
 function solve_equation(part1, part2, searched) {
+  if (part1.variables.includes(searched) && !part2.variables.includes(searched)) {
+    [part1, part2] = isolate_stepwise(part1, part2, searched)
+  } else if (part2.variables.includes(searched) && !part1.variables.includes(searched)) {
+    [part1, part2] = isolate_stepwise(part2, part1, searched)
+  }
+  console.log({ part1, part2 })
+  return { part1, part2 }
+}
+function isolate_stepwise(varPart, otherPart, searched) {
+  console.log("isolate stepwise", arguments)
+  let steps = []
+  while (steps.length < 100) {
+    //("test")
+    let step = isolate_var_step(varPart, searched)
+    steps.push(step)
+    console.log("step:", step)
+    switch (step.state) {
+      case "finished": {
+        return [varPart, otherPart]
+      }
+      case "isolating": {
+        let newOtherPartText = "(" + token_to_text(otherPart) + step.action + ")"
+        otherPart = parse(newOtherPartText)
+        otherPart = reduce_token(otherPart)
+        varPart = step.equation
+        console.log({ newOtherPartText, otherPart, othertext: token_to_text(otherPart), varPart })
+        break;
+      }
+    }
+  }
+}
+function isolate_var_step(equation, searched) {
+  equation=reduce_completely(equation)
+  //alert("to isolate: " + token_to_text(equation))
+  if (equation.type == "word" && equation.text == searched) {
+    console.log("finished")
+    return { state: "finished" }
+  } else if (equation.type == "opChain") {
+    let { content, name } = equation
+    console.log("is opChain")
+    for (let i = 0; i < content.length; i++) {
+      let subnode = content[i]
+      if (!subnode.variables.includes(searched)) {
+        content.splice(i, 1)
+        if (content.length == 1) {
+          equation = content[0]
+        }
+        switch (name) {
+          case "punkt": {
+            console.log("is punkt")
 
+            return {
+              state: "isolating",
+              action: "/" + token_to_text(subnode),
+              equation
+            }
+            break;
+          }
+          case "plus": {
+            return {
+              state: "isolating",
+              action: "-" + token_to_text(subnode),
+              equation
+            }
+            break;
+          }
+        }
+      }
+    }
+  } else if (equation.type == "op") {
+    let val0 = equation.val0
+    let val1 = equation.val1
+    let varPart,otherPart
+    if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
+      varPart=val0
+      otherPart=val1
+    }
+    else if (val1.variables.includes(searched) && !val0.variables.includes(searched)) {
+      varPart=val1
+      otherPart=val0
+    }else if(val0.variables.includes(searched)&&val1.variables.includes(searched)){
+      return {
+        state:"limit"
+      }
+    }else{
+      throw new Error("error in equation"+token_to_text(equation)+"\nThis equation does not include "+searched)
+    }
+    switch (equation.name) {
+
+    }
+  }
+  else {
+    console.log("equation:", { equation, searched })
+  }
 }
 function tokensBelowLevel(token, level) {
   let tokens = []
@@ -36,8 +129,7 @@ function groupWother(a, b, params/*{operandText,operandObj}*/) {
     let newToken = parse(newText)
     newToken = reduce_token(newToken)
     return newToken
-  } else if(!(other.name=="pow"&&gContent.level==0)){
-    console.log("inside")
+  } else if (!(other.name == "pow" && gContent.level == 0)) {
     let newTexts = []
     let content = []//subnodes of content in group
     if (gContent.type == "op") {
@@ -50,7 +142,6 @@ function groupWother(a, b, params/*{operandText,operandObj}*/) {
       newTexts.push(text)
     }
     let newText = newTexts.join(gContent.operand)
-    console.log("here",{newTexts,newText})
     let newToken = parse(newText)
     newToken = reduce_token(newToken)
     return newToken
@@ -58,7 +149,6 @@ function groupWother(a, b, params/*{operandText,operandObj}*/) {
   return null
 }
 function reduce_token(token) {
-  //console.log("reducing...",token_to_text(token))
   if (token.type == "op") {
     let val0 = token.val0 = reduce_token(token.val0)
     let val1 = token.val1 = reduce_token(token.val1)
@@ -71,6 +161,36 @@ function reduce_token(token) {
         if (val0.type == "number") {
           let newVal = val0.val ** val1.val
           return parse(String(newVal))
+        } else if (["group"].includes(val0.val)) {
+          let gText = token_to_text(val0)
+          let testTexts = new Array(Math.floor(val1.val)).fill(gText)
+          let rest = val1.val % 1
+          if (rest != 0) {
+            testTexts.push(gText + "^" + rest)
+          }
+          let testText = testTexts.join("*")
+          let testToken = parse(testText)
+          testToken = reduce_token(testToken)
+          if (testText != token_to_text(testToken)) {
+            return testToken
+          } else {
+            return token
+          }
+        } else if (val1.val == 1) {
+          return val0
+        } else if (val1.val == 0) {
+          return parse("1")
+        }/*else if(val1.val<0){
+          let newText=`(1/${token_to_text(val0)}^${Math.abs(val1.val)})`
+          let newToken=parse(newText)
+          newToken=reduce_token(newToken)
+          return newToken
+        }*/
+      } else if (val0.type == "number") {
+        if (val0.val == 1) {
+          return parse("1")
+        } else if (val0.val == 0) {
+          return parse("0")
         }
       }
     } else if (token.name == "div") {
@@ -127,6 +247,9 @@ function reduce_token(token) {
       }
       return token//nContent.join("+")[0]
     } else if (token.name == "punkt") {
+      if (token.content.some(elt => elt.val == 0)) {
+        return parse("0")
+      }
       token.content.eachWeach(function (elt1, elt2, loop_info) {
         let info1 = getInfo(elt1)
         let info2 = getInfo(elt2)
@@ -170,14 +293,14 @@ function reduce_token(token) {
             list.splice(i2, 1)
             return restart_loop()
           } else {
-            let newText = "("+token_to_text(elt1)+")" + "^2"
+            let newText = "(" + token_to_text(elt1) + ")" + "^2"
             list[i1] = reduce_token(parse(newText))
             list.splice(i2, 1)
             return restart_loop
           }
         }
         else if (elt1.val == 1) {
-          list[i1]=elt2
+          list[i1] = elt2
           list.splice(i2, 1)
           restart_loop()
         }
@@ -186,7 +309,14 @@ function reduce_token(token) {
           restart_loop()
         }
         else if (elt1.name == "div" && elt2.name == "div") {
-          return
+          let testText = `(${token_to_text(elt1.val0)}*${token_to_text(elt2.val0)})/(${token_to_text(elt1.val1)}*${token_to_text(elt2.val1)})`
+          let testToken = parse(testText)
+          testToken = reduce_token(testToken)
+          if (token_to_text(testToken) != testText) {
+            list[i1] = testToken
+            list.splice(i2, 1)
+            return restart_loop()
+          }
         }
         else if (elt1.name == "div" || elt2.name == "div") {
           let div, other
@@ -253,7 +383,6 @@ function getInfo(token) {
 }
 
 function token_to_text(token) {
-  //console.log("totext:", token)
   if (token.type.isOf(["number", "word"])) {
     return token.text
   } else if (token.type == "op") {
