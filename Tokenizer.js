@@ -144,6 +144,7 @@ function tokenize(text) {
         factor:1,
         name:"plusminus"
       })
+      index++
     }
     else {
       throw new Error(`error: unexpected character at index ${index}, character:${text[index]}`)

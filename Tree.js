@@ -193,6 +193,21 @@ function createSyntaxTree(tokens, level = 4, valnfirst = true) {
   }
 
   if (level == -1) {
+    for(let i=0;i<tokens.length;i++){
+      if(tokens[i].type=="sign"){
+        let nextToken=tokens[i+1]
+        if(nextToken){
+        console.log("spliced out: ",tokens.splice(i,2,{
+          text:tokens[i].text,
+          val:nextToken,
+          type:"sign"
+        }))
+        console.log("tokens after splicing:",clone_entirely(tokens))
+        }else{
+          throw new Error("Expected token after sign, but got nothing")
+        }
+      }
+    }
     let i = 0
     while (i < tokens.length) {
       if (tokens[i + 1]) {

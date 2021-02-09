@@ -22,7 +22,7 @@ function isolate_stepwise(varPart, otherPart, searched) {
       case "isolating": {
         let newOtherPartText = step.prefix+"(" + token_to_text(otherPart) + step.action + ")"
         otherPart = parse(newOtherPartText)
-        otherPart = reduce_token(otherPart)
+        otherPart = reduce_completely(otherPart)
         varPart = step.equation
         console.log({ newOtherPartText, otherPart, othertext: token_to_text(otherPart), varPart })
         break;
@@ -178,6 +178,7 @@ function reduce_token(token,mode="simplify") {
   //    (a+3)^2 => a^2+6*a+9 || a^2+6*a+9 => (a+3)^2
   // - "linearfactor"
   //    a^2+6*a+9 => (a+3)^2 //not implemented jet
+ 
   if (token.type == "op") {
     let val0 = token.val0 = reduce_token(token.val0)
     let val1 = token.val1 = reduce_token(token.val1)
@@ -223,6 +224,7 @@ function reduce_token(token,mode="simplify") {
         } else if (val0.val == 0) {
           return parse("0")
         }
+      }
       }
     } else if (token.name == "div") {
       let gwotherResult = groupWother(val0, val1, { operandText: token.operand, operandObj: token })
@@ -379,6 +381,9 @@ function reduce_token(token,mode="simplify") {
     if (["number", "word", "group"].includes(content.type)) {
       return content
     }
+  }else if(token.type=="sign"){
+    token.val=reduce_token(token.val)
+    return token
   }
   return token
 }
@@ -424,5 +429,10 @@ function token_to_text(token) {
     return text
   } else if (token.type == "group") {
     return "(" + token_to_text(token.content) + ")"
+  }else if(token.type=="sign"){
+    return token.text+token_to_text(token.val)
+  }
+  else{
+    return token.text
   }
 }
