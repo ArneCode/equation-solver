@@ -137,7 +137,15 @@ function tokenize(text) {
         factor: 1
       });
       index++;
-    } else {
+    } else if(text[index]=="±"){
+      tokens.push({
+        text:"±",
+        type:"sign",
+        factor:1,
+        name:"plusminus"
+      })
+    }
+    else {
       throw new Error(`error: unexpected character at index ${index}, character:${text[index]}`)
     }
   }

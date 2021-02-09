@@ -20,7 +20,7 @@ function isolate_stepwise(varPart, otherPart, searched) {
         return [varPart, otherPart]
       }
       case "isolating": {
-        let newOtherPartText = "(" + token_to_text(otherPart) + step.action + ")"
+        let newOtherPartText = step.prefix+"(" + token_to_text(otherPart) + step.action + ")"
         otherPart = parse(newOtherPartText)
         otherPart = reduce_token(otherPart)
         varPart = step.equation
@@ -31,7 +31,7 @@ function isolate_stepwise(varPart, otherPart, searched) {
   }
 }
 function isolate_var_step(equation, searched) {
-  equation=reduce_completely(equation)
+  equation = reduce_completely(equation)
   //alert("to isolate: " + token_to_text(equation))
   if (equation.type == "word" && equation.text == searched) {
     console.log("finished")
@@ -53,7 +53,8 @@ function isolate_var_step(equation, searched) {
             return {
               state: "isolating",
               action: "/" + token_to_text(subnode),
-              equation
+              equation,
+              prefix:""
             }
             break;
           }
@@ -61,7 +62,8 @@ function isolate_var_step(equation, searched) {
             return {
               state: "isolating",
               action: "-" + token_to_text(subnode),
-              equation
+              equation,
+              prefix:""
             }
             break;
           }
@@ -71,7 +73,7 @@ function isolate_var_step(equation, searched) {
   } else if (equation.type == "op") {
     let val0 = equation.val0
     let val1 = equation.val1
-    let varPart,otherPart
+    /*let varPart,otherPart
     if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
       varPart=val0
       otherPart=val1
@@ -85,10 +87,27 @@ function isolate_var_step(equation, searched) {
       }
     }else{
       throw new Error("error in equation"+token_to_text(equation)+"\nThis equation does not include "+searched)
-    }
+    }*/
     switch (equation.name) {
-
+      case "pow": {
+        if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
+          return {
+            state: "isolating",
+            action: "^(1/" + token_to_text(val1) + ")",
+            equation: val0,
+            prefix:"±"
+          }
+        }
+        else if (val1.variables.includes(searched) && !val0.variables.includes(searched)) {
+          varPart = val1
+          otherPart = val0
+        }
+        break;
+      }
     }
+  }
+  else if (equation.type == "group") {
+    return isolate_var_step(equation.content, searched)
   }
   else {
     console.log("equation:", { equation, searched })
@@ -148,7 +167,17 @@ function groupWother(a, b, params/*{operandText,operandObj}*/) {
   }
   return null
 }
-function reduce_token(token) {
+
+function reduce_token(token,mode="simplify") {
+  //poss_modes:
+  // - "expand":
+  //    (a+3)^2 => a^2+6*a+9
+  // - "simplyfy"
+  //    2+2=4
+  //    but NOT:
+  //    (a+3)^2 => a^2+6*a+9 || a^2+6*a+9 => (a+3)^2
+  // - "linearfactor"
+  //    a^2+6*a+9 => (a+3)^2 //not implemented jet
   if (token.type == "op") {
     let val0 = token.val0 = reduce_token(token.val0)
     let val1 = token.val1 = reduce_token(token.val1)
@@ -161,7 +190,8 @@ function reduce_token(token) {
         if (val0.type == "number") {
           let newVal = val0.val ** val1.val
           return parse(String(newVal))
-        } else if (["group"].includes(val0.val)) {
+        if (["group"].includes(val0.type)&&mode=="expand") {
+          console.log("TEEEEEEEEESt")
           let gText = token_to_text(val0)
           let testTexts = new Array(Math.floor(val1.val)).fill(gText)
           let rest = val1.val % 1
@@ -171,6 +201,7 @@ function reduce_token(token) {
           let testText = testTexts.join("*")
           let testToken = parse(testText)
           testToken = reduce_token(testToken)
+          console.log({ testText, testToken })
           if (testText != token_to_text(testToken)) {
             return testToken
           } else {
