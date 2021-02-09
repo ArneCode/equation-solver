@@ -9,14 +9,22 @@ function start() {
     Tree=reduce_completely(Tree)
     console.log("reduced:",clone_entirely(Tree))
     console.log("result:",token_to_text(Tree))*/
-    let part1=reduce_token(parse("(a+2)^2"))
+    let searched="x"
+    let part1=reduce_token(parse("(x+2)^2*8"))
     let part2=reduce_token(parse("4"))
     console.log(token_to_text(part1)+"="+token_to_text(part2))
-    let result=solve_equation(part1,part2,"a")
-    part1=result.part1
-    part2=result.part2
-    //console.log("result: ",{part1,part2})
-    console.log(token_to_text(part1)+"="+token_to_text(part2))
+    let solutions=solve_equation(part1,part2,searched)
+    let equationsTexts=[]
+    let equationsText=""
+    if(solutions.length>1){
+    for(let i=0;i<solutions.length;i++){
+      equationsTexts.push(searched+(i+1)+" = "+solutions[i])
+    }
+    equationsText=equationsTexts.join("\n")
+    }else{
+      equationsText=searched+" = "+solutions[0]
+    }
+    console.log("Solution(s):\n",equationsText)
   } catch (e) {
     console.log(e.stack, e, e.message)
   }

@@ -1,11 +1,34 @@
 function solve_equation(part1, part2, searched) {
+  let solutions=[]
   if (part1.variables.includes(searched) && !part2.variables.includes(searched)) {
     [part1, part2] = isolate_stepwise(part1, part2, searched)
   } else if (part2.variables.includes(searched) && !part1.variables.includes(searched)) {
     [part1, part2] = isolate_stepwise(part2, part1, searched)
   }
+  if(part1.text==searched){
+    if(!part2.variables.includes(searched)){
+      solutions.push(token_to_text(part2))
+    }
+  }
+  for(let i=0;i<solutions.length;i++){
+    let solution=solutions[i]
+    if(solution.includes("±")){
+      let plusVariant=solution.replace("±","+")
+      plusVariant=parse(plusVariant)
+      plusVariant=reduce_completely(plusVariant)
+      plusVariant=token_to_text(plusVariant)
+      let minusVariant=solution.replace("±","-")
+      minusVariant=parse(minusVariant)
+      minusVariant=reduce_completely(minusVariant)
+      minusVariant=token_to_text(minusVariant)
+      solutions.push(plusVariant)
+      solutions.push(minusVariant)
+      solutions.splice(i,1)
+      i--
+    }
+  }
   console.log({ part1, part2 })
-  return { part1, part2 }
+  return solutions
 }
 function isolate_stepwise(varPart, otherPart, searched) {
   console.log("isolate stepwise", arguments)
@@ -91,11 +114,15 @@ function isolate_var_step(equation, searched) {
     switch (equation.name) {
       case "pow": {
         if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
+          let prefix=""
+          if(val1.val%2==0){
+            prefix="±"
+          }
           return {
             state: "isolating",
             action: "^(1/" + token_to_text(val1) + ")",
             equation: val0,
-            prefix:"±"
+            prefix
           }
         }
         else if (val1.variables.includes(searched) && !val0.variables.includes(searched)) {
