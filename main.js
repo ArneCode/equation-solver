@@ -1,6 +1,7 @@
 function start() {
   try {
-    let Tree = tokenize("1/a^-2")
+    /*
+    let Tree = tokenize("(a/3)*(3/a)")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log("Tree: ",clone_entirely({Tree}))
@@ -8,10 +9,10 @@ function start() {
     Tree=reduce_completely(Tree)
     console.log("reduced:",clone_entirely(Tree))
     console.log("result:",token_to_text(Tree))//*/
-    /*
+    
     let searched="x"
-    let part1=reduce_token(parse("(x+2)^2"))
-    let part2=reduce_token(parse("0"))
+    let part1=reduce_completely(parse("a-a"))
+    let part2=reduce_completely(parse("0"))
     console.log(token_to_text(part1)+"="+token_to_text(part2))
     let solutions=solve_equation(part1,part2,searched)
     let equationsTexts=[]
@@ -25,7 +26,7 @@ function start() {
     {
       equationsText=searched+" = "+solutions[0]
     }
-    console.log("Solution(s):\n",equationsText)*/
+    console.log("Solution(s):\n",equationsText)//*/
   } catch (e) {
     console.log(e.stack, e, e.message)
   }

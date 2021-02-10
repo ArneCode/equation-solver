@@ -22,7 +22,10 @@ let parantheses = "()"
 let braces = "{}"
 
 function tokenize(text) {
-  console.log("tokenizing... ",text)
+  //alert("tokenizing... "+text)
+  if(text==""){
+    throw new Error("test")
+  }
   if(!(typeof text=="string")){
     throw new Error("input to tokenize must be a string, not"+text)
   }
