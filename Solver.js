@@ -2,25 +2,36 @@ function solve_equation(part1, part2, searched) {
   part1 = reduce_completely(part1)
   part2 = reduce_completely(part2)
   let solutions = trySolvingTactics(part1,part2,searched)
+  console.log("solutions:", solutions)
   for (let i = 0; i < solutions.length; i++) {
     let solution = solutions[i]
+    console.log("solution:", solution)
     if (solution.includes("±")) {
       let plusVariant = solution.replace("±", "+")
-      plusVariant = parse(plusVariant)
-      plusVariant = reduce_completely(plusVariant)
-      plusVariant = token_to_text(plusVariant)
       let minusVariant = solution.replace("±", "-")
-      minusVariant = parse(minusVariant)
-      minusVariant = reduce_completely(minusVariant)
-      minusVariant = token_to_text(minusVariant)
       solutions.push(plusVariant)
       solutions.push(minusVariant)
       solutions.splice(i, 1)
       i--
     }
   }
+  let finalSolutions=[]
+  for(let solution of solutions){
+    try{
+    let token=parse(solution)
+    token=reduce_completely(token)
+    finalSolutions.push(token_to_text(token))
+    }catch(err){
+      if(err.constructor==NegativeRootError){
+        continue;
+      }else{
+        throw err
+      }
+    }
+  }
+  finalSolutions=finalSolutions.filter((elt,idx)=>finalSolutions.indexOf(elt)==idx)
   //console.log({ part1, part2 })
-  return solutions
+  return finalSolutions
 }
 function trySolvingTactics(part1, part2, searched) {
   part1 = reduce_completely(part1)
@@ -35,7 +46,7 @@ function trySolvingTactics(part1, part2, searched) {
   if (part1.text == searched) {
     if (!part2.variables.includes(searched)) {
       console.log("finished solution:", part2)
-      return [part2]
+      return [token_to_text(part2)]
     }
   }
   result = mitternachtsformel(part1, part2, searched)
@@ -71,8 +82,8 @@ function mitternachtsformel(part1, part2, searched) {
     }
   }
   console.log("midnight ks",ks)
-  let [a,b,c]=ks
-  let solution=`(-${b}±((${b})^2-4*${a}*${c}))^0.5/(2*${a})`
+  let [c,b,a]=ks //^0, ^1, ^2s
+  let solution=`(-${b}±((${b})^2-4*${a}*${c})^0.5)/(2*${a})`
   console.log("solution after midnight formula: ",solution)
   return [solution]
 }
@@ -275,8 +286,11 @@ function groupWother(a, b, params/*{operandText,operandObj}*/) {
     return null
   }
   let gContent = group.content
+  /*if(gContent.name=="punkt"&&operandObj.name=="div"){
+    return null
+  }*/
   let otherText = token_to_text(other)
-  if (gContent.level >= operandObj.level) {
+  if (gContent.level >= operandObj.level||gContent.name=="punkt"&&operandObj.name=="div") {
     let newText = token_to_text(gContent) + operandText + otherText
     let newToken = parse(newText)
     newToken = reduce_token(newToken)
@@ -322,6 +336,9 @@ console.log("reducing...", token)
         return val0
       } else if (val1.type == "number") {
         if (val0.type == "number") {
+          if(val1.val%1!=0&&val0.val<0){
+            throw new NegativeRootError("negative root, solution might be to implement i", val0.val,val1.val)
+          }
           let newVal = val0.val ** val1.val
           return parse(String(newVal))
           if (["group"].includes(val0.type) && mode == "expand") {
@@ -369,6 +386,21 @@ console.log("reducing...", token)
         val0.val = newVal
         val0.text = String(newVal)
         return val0
+      }else if(val0.kind=="group"){
+        let gInfo=getInfo(val0.content)
+        let info1=getInfo(val1)
+        if(gInfo.kind=info1.kind){
+          let newVal=gInfo.factor/info1.factor
+          return parse(String(newVal))
+        }
+      }
+      else{
+        let info0=getInfo(val0)
+        let info1=getInfo(val1)
+        if(info0.kind==info1.kind){
+          let newVal=info0.factor/info1.factor
+          return parse(String(newVal))
+        }
       }
     }
   } else if (token.type == "number") {
@@ -574,5 +606,13 @@ function token_to_text(token) {
   }
   else {
     return token.text
+  }
+}
+class NegativeRootError extends Error {
+  constructor(message,rootContent,exponent) {
+    super(message); // (1)
+    this.name = "NegativeRootError"; // (2)
+    this.rootContent=rootContent
+    this.exponent=exponent
   }
 }

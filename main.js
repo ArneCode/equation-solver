@@ -1,17 +1,17 @@
 function start() {
   try {
-    /*
-    let Tree = tokenize("x^2+3*x+1")
+    let Tree = tokenize("1/a^-2")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log("Tree: ",clone_entirely({Tree}))
     console.log(token_to_text(Tree))
     Tree=reduce_completely(Tree)
     console.log("reduced:",clone_entirely(Tree))
-    console.log("result:",token_to_text(Tree))*/
+    console.log("result:",token_to_text(Tree))//*/
+    /*
     let searched="x"
-    let part1=reduce_token(parse("x^2+3*x+1"))
-    let part2=reduce_token(parse("4"))
+    let part1=reduce_token(parse("(x+2)^2"))
+    let part2=reduce_token(parse("0"))
     console.log(token_to_text(part1)+"="+token_to_text(part2))
     let solutions=solve_equation(part1,part2,searched)
     let equationsTexts=[]
@@ -21,10 +21,11 @@ function start() {
       equationsTexts.push(searched+(i+1)+" = "+solutions[i])
     }
     equationsText=equationsTexts.join("\n")
-    }else{
+    }else if(solutions.length==1)
+    {
       equationsText=searched+" = "+solutions[0]
     }
-    console.log("Solution(s):\n",equationsText)
+    console.log("Solution(s):\n",equationsText)*/
   } catch (e) {
     console.log(e.stack, e, e.message)
   }
