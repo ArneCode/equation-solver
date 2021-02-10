@@ -679,3 +679,20 @@ class InformationError extends Error{
     super(message)
   }
 }
+function reduce_completely(token,mode="simplify"){
+  let before=[]
+  let result=reduce_token(token,mode)
+  let resultText=token_to_text(result)
+  while(!before.includes(resultText)){
+    //console.log("new loop",token_to_text(result))
+    before.push(resultText)
+    result=reduce_token(parse(resultText),mode)
+    if(result.type=="group"){
+      result=result.content
+    }
+    resultText=token_to_text(result)
+    //console.log("result after reducing again:",{result,resultText})
+  }
+  //console.log("finished loop",{before,resultText,result})
+  return result
+}

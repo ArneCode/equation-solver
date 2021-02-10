@@ -1,7 +1,31 @@
-html, body {
-  margin: 0;
-  padding: 0;
+body{
+  position: relative;
+  top:30px;
 }
 canvas {
   display: block;
+}
+button.large{
+  font-size: 1.5em;
+}
+input.large{
+  font-size: 1.5em;
+  width: 70%;
+}
+.center{
+  position: relative;
+  left: 10%;
+}
+input{
+  border-radius: 5px;
+  border:1px solid;
+}
+button{
+  border-radius: 5px;
+  padding-bottom: 3px;
+}
+.solutionBlock{
+  border: 1px solid grey;
+  border-radius: 3px;
+  font-size: 1.5em;
 }

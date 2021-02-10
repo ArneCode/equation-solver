@@ -1,6 +1,7 @@
-function start() {
+
+/*function start() {
   try {
-    /*
+    
     let Tree = tokenize("(a/3)*(3/a)")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
@@ -8,7 +9,7 @@ function start() {
     console.log(token_to_text(Tree))
     Tree=reduce_completely(Tree)
     console.log("reduced:",clone_entirely(Tree))
-    console.log("result:",token_to_text(Tree))//*/
+    console.log("result:",token_to_text(Tree))//
     
     let searched="x"
     let part1=reduce_completely(parse("a-a"))
@@ -26,25 +27,23 @@ function start() {
     {
       equationsText=searched+" = "+solutions[0]
     }
-    console.log("Solution(s):\n",equationsText)//*/
+    console.log("Solution(s):\n",equationsText)//
   } catch (e) {
     console.log(e.stack, e, e.message)
   }
-}
-function reduce_completely(token,mode="simplify"){
-  let before=[]
-  let result=reduce_token(token,mode)
-  let resultText=token_to_text(result)
-  while(!before.includes(resultText)){
-    //console.log("new loop",token_to_text(result))
-    before.push(resultText)
-    result=reduce_token(parse(resultText),mode)
-    if(result.type=="group"){
-      result=result.content
-    }
-    resultText=token_to_text(result)
-    //console.log("result after reducing again:",{result,resultText})
+}*/
+function handleEquationSubmit(event){
+  let equationText=equationInput.value
+  let [part1Text,part2Text]=equationText.replace(/ /g,"").split("=")
+  let part1=parse(part1Text)
+  let part2=parse(part2Text)
+  let searched="x"
+  let solutions=solve_equation(part1,part2,"x")
+  let solutionsHTML=""
+  for(let solution of solutions){
+    solutionsHTML+=`<span class="solutionBlock">${searched} = ${solution}</span>`
   }
-  //console.log("finished loop",{before,resultText,result})
-  return result
+  solutionsContainer.innerHTML=solutionsHTML
+  event.preventDefault(true)
 }
+equationForm.addEventListener("submit",handleEquationSubmit)
