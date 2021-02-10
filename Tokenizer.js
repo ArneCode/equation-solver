@@ -22,6 +22,7 @@ let parantheses = "()"
 let braces = "{}"
 
 function tokenize(text) {
+  console.log("tokenizing... ",text)
   if(!(typeof text=="string")){
     throw new Error("input to tokenize must be a string, not"+text)
   }
@@ -52,20 +53,23 @@ function tokenize(text) {
       })
         index+=numlength
         }
-      }else if([undefined,"("].includes(text[index-1])){
+      }else /*if([undefined,"("].includes(text[index-1]))*/{
+        console.log("case 1")
         tokens.push({
           text:"-",
           type:"sign",
           factor:1
         })
         index++
-      }else{
+      }/*else{
+        console.log("case 2")
         tokens.push({
           text:"-",
           level:0,
           type:"op"
         })
-      }
+        index++
+      }*/
       //alert(text[index])
       /*curr_token = text[index]
       while (index < text.length) {

@@ -1,37 +1,141 @@
 function solve_equation(part1, part2, searched) {
-  let solutions=[]
+  part1 = reduce_completely(part1)
+  part2 = reduce_completely(part2)
+  let solutions = trySolvingTactics(part1,part2,searched)
+  for (let i = 0; i < solutions.length; i++) {
+    let solution = solutions[i]
+    if (solution.includes("±")) {
+      let plusVariant = solution.replace("±", "+")
+      plusVariant = parse(plusVariant)
+      plusVariant = reduce_completely(plusVariant)
+      plusVariant = token_to_text(plusVariant)
+      let minusVariant = solution.replace("±", "-")
+      minusVariant = parse(minusVariant)
+      minusVariant = reduce_completely(minusVariant)
+      minusVariant = token_to_text(minusVariant)
+      solutions.push(plusVariant)
+      solutions.push(minusVariant)
+      solutions.splice(i, 1)
+      i--
+    }
+  }
+  //console.log({ part1, part2 })
+  return solutions
+}
+function trySolvingTactics(part1, part2, searched) {
+  part1 = reduce_completely(part1)
+  part2 = reduce_completely(part2)
+  let result
+  console.log("1")
   if (part1.variables.includes(searched) && !part2.variables.includes(searched)) {
     [part1, part2] = isolate_stepwise(part1, part2, searched)
   } else if (part2.variables.includes(searched) && !part1.variables.includes(searched)) {
     [part1, part2] = isolate_stepwise(part2, part1, searched)
   }
-  if(part1.text==searched){
-    if(!part2.variables.includes(searched)){
-      solutions.push(token_to_text(part2))
+  if (part1.text == searched) {
+    if (!part2.variables.includes(searched)) {
+      console.log("finished solution:", part2)
+      return [part2]
     }
   }
-  for(let i=0;i<solutions.length;i++){
-    let solution=solutions[i]
-    if(solution.includes("±")){
-      let plusVariant=solution.replace("±","+")
-      plusVariant=parse(plusVariant)
-      plusVariant=reduce_completely(plusVariant)
-      plusVariant=token_to_text(plusVariant)
-      let minusVariant=solution.replace("±","-")
-      minusVariant=parse(minusVariant)
-      minusVariant=reduce_completely(minusVariant)
-      minusVariant=token_to_text(minusVariant)
-      solutions.push(plusVariant)
-      solutions.push(minusVariant)
-      solutions.splice(i,1)
-      i--
+  result = mitternachtsformel(part1, part2, searched)
+  if (result.length > 0) {
+    return result
+  }
+}
+function mitternachtsformel(part1, part2, searched) {
+  console.log("inside of midnigt formula",{searched})
+  let expression = all_one_side(part1, part2).newPart1
+  console.log("expression:",{expression})
+  expression = reduce_completely(expression, "expand")
+  let parts = getCoefficients(expression,searched)
+  console.log("coefficients of midnight formula",parts)
+  if(parts.length==0){
+    console.log("midnight parts length 0",clone_entirely(parts))
+    return []
+  }
+  console.log("midnight test 1")
+  let ks=new Array(3).fill("0")
+  for (let part of parts) {
+  console.log("midnight test 2",{part})
+    if(isInt(part.exp)){
+      let n=Number(part.exp)
+      if(n<0||n>2){
+        return []
+      }else{
+      ks[n]=part.k
+      }
+    }else{
+      console.log("is not int",part.exp)
+      return []
     }
   }
-  console.log({ part1, part2 })
-  return solutions
+  console.log("midnight ks",ks)
+  let [a,b,c]=ks
+  let solution=`(-${b}±((${b})^2-4*${a}*${c}))^0.5/(2*${a})`
+  console.log("solution after midnight formula: ",solution)
+  return [solution]
+}
+function getCoefficients(token,searched) {
+  //coefficients, k because in German it's koefficient
+  console.log("getCoefficients",clone_entirely(arguments))
+  if (token.name == "plus") {
+    let ks = []
+    for (let node of token.content) {
+      ks = ks.concat(getCoefficients(node,searched))
+    }
+    console.log("coefficients plus",ks)
+    return ks
+  } else if (token.name == "punkt") {
+    console.log("coefficients punkt token:",token)
+    let expPart, others = []
+    for (let elt of token.content) {
+      if (elt.type == "pow"&&!expPart) {
+        console.log("coefficients punkt elt pow elt:",elt)
+        if (elt.val0.text == searched) {
+          console.log("coefficients punkt pow case 1")
+          if (!expPart) {
+            expPart = token_to_text(elt.val1)
+          }
+        }else{
+          console.log("coefficients punkt pow case 2")
+          others.push(token_to_text(elt))
+        }
+      } else if (elt.text == searched && !expPart) {
+         console.log("coefficients punkt case else if", {elt, elttext:token_to_text(elt),expPart})
+        expPart = "1"
+      }
+      else {
+        console.log("coefficients punkt case else", {elt, elttext:token_to_text(elt),expPart,searched})
+        others.push(token_to_text(elt))
+      }
+    }
+    let result= [{ k: others.join("*"), exp: expPart?expPart:"0" }]
+    console.log("coefficients punkt result", {result,others,expPart})
+    return result
+  } else if (token.name == "pow") {
+    console.log("coefficients pow token:",token)
+    if(token.val0.text==searched){
+      let result=[{k:"1",exp:token_to_text(token.val1)}]
+      console.log("coefficients pow1",result)
+      return result
+    }else{
+      console.log("coefficients pow2")
+      return [{k:token_to_text(token),exp:"0"}]
+    }
+  }else{
+    return [{k:token_to_text(token),exp:"0"}]
+  }
+}
+function all_one_side(part1, part2) {
+  let newPart1Text = "("+token_to_text(part1) + ")-(" + token_to_text(part2) + ")"
+  console.log("newPart1Text",newPart1Text)
+  let newPart1=parse(newPart1Text)
+  let newPart2 = parse("0")
+  return { newPart1, newPart2 }
 }
 function isolate_stepwise(varPart, otherPart, searched) {
-  console.log("isolate stepwise", arguments)
+  console.log("isolate stepwise", clone_entirely({arguments,varPart,otherPart,searched}))
   let steps = []
   while (steps.length < 100) {
     //("test")
@@ -43,7 +147,7 @@ function isolate_stepwise(varPart, otherPart, searched) {
         return [varPart, otherPart]
       }
       case "isolating": {
-        let newOtherPartText = step.prefix+"(" + token_to_text(otherPart) + step.action + ")"
+        let newOtherPartText = step.prefix + "(" + token_to_text(otherPart) + step.action + ")"
         otherPart = parse(newOtherPartText)
         otherPart = reduce_completely(otherPart)
         varPart = step.equation
@@ -77,7 +181,7 @@ function isolate_var_step(equation, searched) {
               state: "isolating",
               action: "/" + token_to_text(subnode),
               equation,
-              prefix:""
+              prefix: ""
             }
             break;
           }
@@ -86,7 +190,7 @@ function isolate_var_step(equation, searched) {
               state: "isolating",
               action: "-" + token_to_text(subnode),
               equation,
-              prefix:""
+              prefix: ""
             }
             break;
           }
@@ -114,9 +218,9 @@ function isolate_var_step(equation, searched) {
     switch (equation.name) {
       case "pow": {
         if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
-          let prefix=""
-          if(val1.val%2==0){
-            prefix="±"
+          let prefix = ""
+          if (val1.val % 2 == 0) {
+            prefix = "±"
           }
           return {
             state: "isolating",
@@ -137,8 +241,10 @@ function isolate_var_step(equation, searched) {
     return isolate_var_step(equation.content, searched)
   }
   else {
+    return {state:"finished"}
     console.log("equation:", { equation, searched })
   }
+  return {state:"finished"}
 }
 function tokensBelowLevel(token, level) {
   let tokens = []
@@ -195,7 +301,7 @@ function groupWother(a, b, params/*{operandText,operandObj}*/) {
   return null
 }
 
-function reduce_token(token,mode="simplify") {
+function reduce_token(token, mode = "simplify") {
   //poss_modes:
   // - "expand":
   //    (a+3)^2 => a^2+6*a+9
@@ -205,53 +311,51 @@ function reduce_token(token,mode="simplify") {
   //    (a+3)^2 => a^2+6*a+9 || a^2+6*a+9 => (a+3)^2
   // - "linearfactor"
   //    a^2+6*a+9 => (a+3)^2 //not implemented jet
- 
+console.log("reducing...", token)
   if (token.type == "op") {
-    let val0 = token.val0 = reduce_token(token.val0)
-    let val1 = token.val1 = reduce_token(token.val1)
+    let val0 = token.val0 = reduce_token(token.val0, mode)
+    let val1 = token.val1 = reduce_token(token.val1, mode)
     if (token.name == "pow") {
       if (val0.name == "pow") {
         let newBaseExpText = "(" + token_to_text(val0.val1) + "*" + token_to_text(val1) + ")"
-        val0.val1 = reduce_token(parse(newBaseExpText))
+        val0.val1 = reduce_token(parse(newBaseExpText), mode)
         return val0
       } else if (val1.type == "number") {
         if (val0.type == "number") {
           let newVal = val0.val ** val1.val
           return parse(String(newVal))
-        if (["group"].includes(val0.type)&&mode=="expand") {
-          console.log("TEEEEEEEEESt")
-          let gText = token_to_text(val0)
-          let testTexts = new Array(Math.floor(val1.val)).fill(gText)
-          let rest = val1.val % 1
-          if (rest != 0) {
-            testTexts.push(gText + "^" + rest)
-          }
-          let testText = testTexts.join("*")
-          let testToken = parse(testText)
-          testToken = reduce_token(testToken)
-          console.log({ testText, testToken })
-          if (testText != token_to_text(testToken)) {
-            return testToken
-          } else {
-            return token
-          }
-        } else if (val1.val == 1) {
-          return val0
-        } else if (val1.val == 0) {
-          return parse("1")
-        }/*else if(val1.val<0){
+          if (["group"].includes(val0.type) && mode == "expand") {
+            let gText = token_to_text(val0)
+            let testTexts = new Array(Math.floor(val1.val)).fill(gText)
+            let rest = val1.val % 1
+            if (rest != 0) {
+              testTexts.push(gText + "^" + rest)
+            }
+            let testText = testTexts.join("*")
+            let testToken = parse(testText)
+            testToken = reduce_token(testToken, mode)
+            if (testText != token_to_text(testToken)) {
+              return testToken
+            } else {
+              return token
+            }
+          } else if (val1.val == 1) {
+            return val0
+          } else if (val1.val == 0) {
+            return parse("1")
+          }/*else if(val1.val<0){
           let newText=`(1/${token_to_text(val0)}^${Math.abs(val1.val)})`
           let newToken=parse(newText)
           newToken=reduce_token(newToken)
           return newToken
         }*/
-      } else if (val0.type == "number") {
-        if (val0.val == 1) {
-          return parse("1")
-        } else if (val0.val == 0) {
-          return parse("0")
+        } else if (val0.type == "number") {
+          if (val0.val == 1) {
+            return parse("1")
+          } else if (val0.val == 0) {
+            return parse("0")
+          }
         }
-      }
       }
     } else if (token.name == "div") {
       let gwotherResult = groupWother(val0, val1, { operandText: token.operand, operandObj: token })
@@ -270,7 +374,7 @@ function reduce_token(token,mode="simplify") {
   } else if (token.type == "number") {
     return token
   } else if (token.type == "opChain") {
-    token.content = token.content.map(reduce_token)
+    token.content = token.content.map(elt => reduce_token(elt, mode))
     token.content.eachWeach(function (elt1, elt2, loop_info) {
       let { i1, i2, list, restart_loop } = loop_info
       let result = groupWother(elt1, elt2, { operandText: token.operand, operandObj: token })
@@ -320,7 +424,7 @@ function reduce_token(token,mode="simplify") {
           if (base1Text == base2Text) {
             let newExpText = `(${token_to_text(elt1.val1)}+${token_to_text(elt2.val1)})`
             let newExp = parse(newExpText)
-            newExp = reduce_token(newExp)
+            newExp = reduce_token(newExp, mode)
             elt1.val1 = newExp
             list.splice(i2, 1)
             return restart_loop()
@@ -341,7 +445,7 @@ function reduce_token(token,mode="simplify") {
           if (powBaseText == otherText) {
             if (pow.val1.type == "number") {
               let newText = `${powBaseText}^(${token_to_text(pow.val1)}+1)`
-              list[i1] = reduce_token(parse(newText))
+              list[i1] = reduce_token(parse(newText), mode)
               list.splice(i2, 1)
               return restart_loop()
             }
@@ -354,7 +458,7 @@ function reduce_token(token,mode="simplify") {
             return restart_loop()
           } else {
             let newText = "(" + token_to_text(elt1) + ")" + "^2"
-            list[i1] = reduce_token(parse(newText))
+            list[i1] = reduce_token(parse(newText), mode)
             list.splice(i2, 1)
             return restart_loop
           }
@@ -371,7 +475,7 @@ function reduce_token(token,mode="simplify") {
         else if (elt1.name == "div" && elt2.name == "div") {
           let testText = `(${token_to_text(elt1.val0)}*${token_to_text(elt2.val0)})/(${token_to_text(elt1.val1)}*${token_to_text(elt2.val1)})`
           let testToken = parse(testText)
-          testToken = reduce_token(testToken)
+          testToken = reduce_token(testToken, mode)
           if (token_to_text(testToken) != testText) {
             list[i1] = testToken
             list.splice(i2, 1)
@@ -389,7 +493,7 @@ function reduce_token(token,mode="simplify") {
           }
           let testText = "(" + token_to_text(other) + "/" + token_to_text(div.val1) + ")"
           let testToken = parse(testText)
-          testToken = reduce_token(testToken)
+          testToken = reduce_token(testToken, mode)
           if (token_to_text(testToken) != testText) {
             list[i1] = div.val0
             list[i2] = testToken
@@ -403,13 +507,22 @@ function reduce_token(token,mode="simplify") {
       return token
     }
   } else if (token.type == "group") {
-    token.content = reduce_token(token.content)
+    token.content = reduce_token(token.content, mode)
     let { content } = token
     if (["number", "word", "group"].includes(content.type)) {
       return content
     }
-  }else if(token.type=="sign"){
-    token.val=reduce_token(token.val)
+  } else if (token.type == "sign") {
+    console.log("reducing sign")
+    token.val = reduce_token(token.val, mode)
+    let testText="-1*"+token_to_text(token.val)
+    let testToken=reduce_token(parse(testText),mode)
+    if(token_to_text(testToken)!=testText){
+      console.log("returning testToken")
+      return testToken
+    }else{
+      console.log("not returning testToken",{testToken,testText})
+    }
     return token
   }
   return token
@@ -456,10 +569,10 @@ function token_to_text(token) {
     return text
   } else if (token.type == "group") {
     return "(" + token_to_text(token.content) + ")"
-  }else if(token.type=="sign"){
-    return token.text+token_to_text(token.val)
+  } else if (token.type == "sign") {
+    return token.text + token_to_text(token.val)
   }
-  else{
+  else {
     return token.text
   }
 }

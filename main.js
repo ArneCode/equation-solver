@@ -1,7 +1,7 @@
 function start() {
   try {
     /*
-    let Tree = tokenize("±2+3")
+    let Tree = tokenize("x^2+3*x+1")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log("Tree: ",clone_entirely({Tree}))
@@ -10,7 +10,7 @@ function start() {
     console.log("reduced:",clone_entirely(Tree))
     console.log("result:",token_to_text(Tree))*/
     let searched="x"
-    let part1=reduce_token(parse("(x+2)^2*8"))
+    let part1=reduce_token(parse("x^2+3*x+1"))
     let part2=reduce_token(parse("4"))
     console.log(token_to_text(part1)+"="+token_to_text(part2))
     let solutions=solve_equation(part1,part2,searched)
@@ -29,20 +29,20 @@ function start() {
     console.log(e.stack, e, e.message)
   }
 }
-function reduce_completely(token){
+function reduce_completely(token,mode="simplify"){
   let before=[]
-  let result=reduce_token(token)
+  let result=reduce_token(token,mode)
   let resultText=token_to_text(result)
   while(!before.includes(resultText)){
-    console.log("new loop",token_to_text(result))
+    //console.log("new loop",token_to_text(result))
     before.push(resultText)
-    result=reduce_token(parse(resultText))
+    result=reduce_token(parse(resultText),mode)
     if(result.type=="group"){
       result=result.content
     }
     resultText=token_to_text(result)
-    console.log("result after reducing again:",{result,resultText})
+    //console.log("result after reducing again:",{result,resultText})
   }
-  console.log("finished loop",{before,resultText,result})
+  //console.log("finished loop",{before,resultText,result})
   return result
 }

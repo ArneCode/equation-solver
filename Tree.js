@@ -232,5 +232,9 @@ function createSyntaxTree(tokens, level = 4, valnfirst = true) {
   //alert("test")
 }
 function parse(text) {
-  return createSyntaxTree(tokenize(text))[0]
+  let tokens=tokenize(text)
+  console.log("tokens: ",tokens)
+  let Tree=createSyntaxTree(tokens)[0]
+  console.log("Tree: ",Tree)
+  return Tree
 }

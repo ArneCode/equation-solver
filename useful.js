@@ -163,3 +163,17 @@ Array.prototype.compare = function (other) {
   }
   return null;
 }
+function isNumeric(str) {
+  //from https://stackoverflow.com/a/175787
+  if (typeof str != "string") return false // we only process strings!  
+  return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+         !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+}
+function isInt(str){
+  if(isNumeric(str)){
+    if(Number(str)%1==0){
+      return true
+    }
+  }
+  return false
+}
