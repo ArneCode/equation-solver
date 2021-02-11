@@ -20,12 +20,8 @@ let operands = [{
 }]
 let parantheses = "()"
 let braces = "{}"
-
 function tokenize(text) {
   //alert("tokenizing... "+text)
-  if(text==""){
-    throw new Error("test")
-  }
   if(!(typeof text=="string")){
     throw new Error("input to tokenize must be a string, not"+text)
   }
@@ -56,7 +52,7 @@ function tokenize(text) {
       })
         index+=numlength
         }
-      }else /*if([undefined,"("].includes(text[index-1]))*/{
+      }else{
         console.log("case 1")
         tokens.push({
           text:"-",
@@ -64,37 +60,7 @@ function tokenize(text) {
           factor:1
         })
         index++
-      }/*else{
-        console.log("case 2")
-        tokens.push({
-          text:"-",
-          level:0,
-          type:"op"
-        })
-        index++
-      }*/
-      //alert(text[index])
-      /*curr_token = text[index]
-      while (index < text.length) {
-        index++
-        if (NUMDOT.includes(text[index])) {
-          curr_token += text[index]
-        } else {
-          break
-        }
       }
-      if (text[index - 1] == ".") {
-        index--
-        curr_token = curr_token.substr(0, curr_token.length - 1)
-      }
-      tokens.push({
-        text: curr_token,
-        type: "number",
-        factor: 1
-      })
-      //  alert("["+tokens+"]")
-      //alert(tokens.length)
-      curr_token = ""*/
     } else if (ALPHA.includes(text[index])) {
       curr_token = text[index]
       while (index < text.length) {

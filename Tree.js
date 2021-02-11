@@ -22,7 +22,6 @@ function variablesInBlock(token) {
     let var0 = variablesInBlock(token.val0)
     let var1 = variablesInBlock(token.val1)
     variables = variables.concat(var0, var1)
-
   } else if (token.type == "opChain") {
     for (let c of token.content) {
       variables = variables.concat(variablesInBlock(c))
@@ -32,11 +31,9 @@ function variablesInBlock(token) {
   } else if (token.type == "word") {
     variables = [token.text]
   }
-
   token.variables = variables
   return variables
 }
-
 function indexWhereType(tokens, type) {
   let indexes = []
   for (let i in tokens) {
@@ -46,7 +43,6 @@ function indexWhereType(tokens, type) {
   }
   return indexes
 }
-
 function handleSyntaxOp(tokens, level, name, doChain = false, reversed = false) {
   let tokenIndexes = indexWhereOpLevel(tokens, level)
   let indexOff = 0
@@ -124,7 +120,6 @@ function createSyntaxTree(tokens, level = 4) {
       }
     }
     let indexOff = 0
-
     let additionList = []
     for (let indexI = 0; indexI < tokenIndexes.length; indexI++) {
       let tokenIndex = tokenIndexes[indexI] - indexOff
@@ -147,9 +142,7 @@ function createSyntaxTree(tokens, level = 4) {
       tokens.splice(tokenIndex, 1)
       indexOff++
     }
-
   }
-
   if (level == 4) {
     let tokenIndexes = indexWhereType(tokens, "paranthese")
     let maxIter = tokenIndexes.length
@@ -183,7 +176,6 @@ function createSyntaxTree(tokens, level = 4) {
         }
       }
     }
-
     if (tokenIndexes.length != 0) {
       throw {
         message: "unmatching Brackets2",
@@ -193,17 +185,13 @@ function createSyntaxTree(tokens, level = 4) {
   }
   if (level == 3) {
     handleSyntaxOp(tokens, 3, "pow")
-
   }
-
   if (level == 0) {
     handleSyntaxOp(tokens, 1, "punkt", true)
   }
-
   if (level == 1) {
     handleOpReversed(tokens, 2, "div")
   }
-
   if (level == -1) {
     for (let i = 0; i < tokens.length; i++) {
       if (tokens[i].type == "sign") {
@@ -233,7 +221,6 @@ function createSyntaxTree(tokens, level = 4) {
     }
     handleSyntaxOp(tokens, 0, "plus", true)
   }
-
   if (level >= 0) {
     return createSyntaxTree(tokens, level - 1)
   }
