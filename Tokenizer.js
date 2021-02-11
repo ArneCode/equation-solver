@@ -53,7 +53,6 @@ function tokenize(text) {
         index+=numlength
         }
       }else{
-        console.log("case 1")
         tokens.push({
           text:"-",
           type:"sign",

@@ -31,6 +31,7 @@ function variablesInBlock(token) {
   } else if (token.type == "word") {
     variables = [token.text]
   }
+  variables=variables.filter((v,idx)=>variables.indexOf(v)==idx)
   token.variables = variables
   return variables
 }
@@ -93,7 +94,6 @@ function handleOpReversed(tokens, level, name) {
   for (let indexI = tokenIndexes.length - 1; indexI >= 0; indexI--) {
     let tokenIndex = tokenIndexes[indexI]// + indexOff
     let token = tokens[tokenIndex]
-    console.log("token: ",{token,tokens,tokenIndex,indexI,tokenIndexes})
     let val0 = tokens[tokenIndex - 1]
     let val1 = tokens[tokenIndex + 1]
     let newObj = {
@@ -197,12 +197,11 @@ function createSyntaxTree(tokens, level = 4) {
       if (tokens[i].type == "sign") {
         let nextToken = tokens[i + 1]
         if (nextToken) {
-          console.log("spliced out: ", tokens.splice(i, 2, {
+          tokens.splice(i, 2, {
             text: tokens[i].text,
             val: nextToken,
             type: "sign"
-          }))
-          console.log("tokens after splicing:", clone_entirely(tokens))
+          })
         } else {
           throw new Error("Expected token after sign, but got nothing")
         }
@@ -232,8 +231,6 @@ function createSyntaxTree(tokens, level = 4) {
 }
 function parse(text) {
   let tokens = tokenize(text)
-  console.log("tokens: ", tokens)
   let Tree = createSyntaxTree(tokens)[0]
-  console.log("Tree: ", Tree)
   return Tree
 }

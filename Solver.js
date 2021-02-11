@@ -62,15 +62,17 @@ function trySolvingTactics(part1, part2, searched, historyCallback) {
       return [token_to_text(newPart2)]
     }
   }
-  result = mitternachtsformel(part1, part2, searched)
+  result = mitternachtsformel(part1, part2, searched, historyCallback)
   if (result.length > 0) {
     return result
   }
 }
-function mitternachtsformel(part1, part2, searched) {
-  let expression = all_one_side(part1, part2).newPart1
+function mitternachtsformel(part1, part2, searched, historyCallback) {
+  let actions=[]
+  let actionsCallback=elt=>actions.push(elt)
+  let expression = all_one_side(part1, part2,actionsCallback).newPart1
   try {
-    expression = reduce_completely(expression, "expand")
+    expression = reduce_completely(expression, "expand", actionsCallback)
   } catch (err) {
     if (err.constructor == NegativeRootError) {
       console.log("negative root error while expanding expression")
@@ -80,6 +82,7 @@ function mitternachtsformel(part1, part2, searched) {
     }
   }
   let parts = getCoefficients(expression, searched)
+  console.log("midnight parts",parts)
   if (parts.length == 0) {
     return []
   }
@@ -96,12 +99,38 @@ function mitternachtsformel(part1, part2, searched) {
       return []
     }
   }
+  console.log("midnight ks",ks)
   let [c, b, a] = ks
+  actions.push(
+    `<h3>Finding a, b and c</h3>
+    <span class="historyBlock">
+    a = ${a}
+    <br/>
+    b = ${b}
+    <br/>
+    c = ${c}
+    </span>
+    `
+  )
   let solution = `(-${b}±((${b})^2-4*${a}*${c})^0.5)/(2*${a})`
+  actions.push(
+    `<h3>Inserting a, b and c into the midnight formula</h3>
+    <br/>
+    <span>${searched}<sub>1/2</sub> = ${solution}</span>`
+  )
+  solution=parse(solution)
+  solution=reduce_completely(solution,"simplify",actionsCallback)
+  solution=token_to_text(solution)
+  historyCallback({
+    title: "<h2>midnight formula:</h2>",
+    actions,
+    delimiter:""
+  })
   return [solution]
 }
 function getCoefficients(token, searched) {
   //coefficients, k because in German it's koefficient
+  console.log("koeff",{token,searched})
   if (token.name == "plus") {
     let ks = []
     for (let node of token.content) {
@@ -109,9 +138,12 @@ function getCoefficients(token, searched) {
     }
     return ks
   } else if (token.name == "punkt") {
+    console.log("koeff punkt",token)
     let expPart, others = []
     for (let elt of token.content) {
-      if (elt.type == "pow" && !expPart) {
+      console.log("punkt elt",{elt,token})
+      if (elt.name == "pow" && !expPart) {
+        console.log("koeff pow", {elt,token})
         if (elt.val0.text == searched) {
           if (!expPart) {
             expPart = token_to_text(elt.val1)
@@ -139,10 +171,15 @@ function getCoefficients(token, searched) {
     return [{ k: token_to_text(token), exp: "0" }]
   }
 }
-function all_one_side(part1, part2) {
+function all_one_side(part1, part2, actionsCallback=null) {
   let newPart1Text = "(" + token_to_text(part1) + ")-(" + token_to_text(part2) + ")"
   let newPart1 = parse(newPart1Text)
   let newPart2 = parse("0")
+  if(actionsCallback&&part2.val!=0){
+    actionsCallback(`
+    <h3>Putting everything on one Side</h3><br/>
+    <span>${token_to_text(part1)} = ${token_to_text(part2)} | -(${token_to_text(part2)})</span>`)
+  }
   return { newPart1, newPart2 }
 }
 function isolate_stepwise(varPart, otherPart, searched, actionsCallback) {
@@ -663,7 +700,7 @@ class InformationError extends Error {
     super(message)
   }
 }
-function reduce_completely(token, mode = "simplify") {
+function reduce_completely(token, mode = "simplify", actionsCallback=null) {
   let before = []
   let beforeText = token_to_text(token)
   let result = reduce_token(token, mode)
@@ -676,24 +713,43 @@ function reduce_completely(token, mode = "simplify") {
     }
     resultText = token_to_text(result)
   }
+  if(actionsCallback&&beforeText!=resultText){
+    let title
+    switch(mode){
+      case "simplify": {title="Simplifying expression:"; break;}
+      case "expand": {title="Simplifying expression by expansion"; break;}
+    }
+    actionsCallback(`<h3>${title}</h3><br/>
+      <span class="historyBlock">${beforeText}</span>
+      <span>↓</span>
+      <span class="historyBlock">${resultText}</span>`)
+  }
   return result
 }
-function reduce_equation(part1, part2,mode="simplify", historyCallback=null){
+function reduce_equation(part1, part2,mode="simplify", historyCallback=null, actionsCallback=null){
   let part1TextBefore=token_to_text(part1)
   let part2TextBefore=token_to_text(part2)
   part1=reduce_completely(part1,mode)
   part2=reduce_completely(part2,mode)
-  if(token_to_text(part1)!=part1TextBefore||token_to_text(part2)!=part2TextBefore){
+  if((token_to_text(part1)!=part1TextBefore||token_to_text(part2)!=part2TextBefore)&&(historyCallback||actionsCallback)){
         let title = ""
     switch (mode) {
-      case "simplify": title = "Simplifying equation:"
+      case "simplify": title = "Simplifying equation:"; break;
+      case "expand": title="Simplifying equation by expansion"; break;
     }
+    if(historyCallback){
     historyCallback({
       title,
       actions:[`${part1TextBefore} = ${part2TextBefore}`,
       `${token_to_text(part1)} = ${token_to_text(part2)}`],
       delimiter:"↓"
     })
+    }else{
+      actionsCallback(`<h3>${title}</h3><br/>
+      <span class="historyBlock">${part1TextBefore} = ${part2TextBefore}</span>
+      <span>↓</span>
+      <span class="historyBlock">${token_to_text(part1)} = ${token_to_text(part2)}</span>`)
+    }
   }
   return [part1,part2]
 }

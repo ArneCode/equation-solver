@@ -3,21 +3,23 @@
 
 <head>
 	<link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="dropdown.css">
 	<meta charset="utf-8">
 </head>
 
-<body onload="">
-  <div class="center" style="top:30%;">
-	<form id="equationForm">
-		<input id="equationInput" placeholder="equation" class="large"></input>
-  <button type="submit" class="large">go</button>
-  </form>
-  <div id="solutionsContainer">
-
-  </div>
-  <div id="historyContainer">
-    
-  </div>
+<body onload="start()">
+	<div class="center" style="top:30%;">
+		<form id="equationForm">
+			<input id="equationInput" placeholder="equation" class="large"></input>
+      <button type="submit" class="large">go</button>
+      <br/>
+      searched var:
+      <input id="searchVarInput" placeholder="searched var" value="x"></input>
+    </form>
+    <div id="solutionsContainer">
+    </div>
+    <div id="historyContainer">
+    </div>
   </div>
   <script src="dom.js"></script>
 	<script src="useful.js">

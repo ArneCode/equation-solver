@@ -1,13 +1,14 @@
-/*function start() {
+function start() {
   try {
-    let Tree = tokenize("-0")
+    let Tree = tokenize("a*(a+1)")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log("Tree: ",clone_entirely({Tree}))
     console.log(token_to_text(Tree))
     Tree=reduce_completely(Tree)
     console.log("reduced:",clone_entirely(Tree))
-    console.log("result:",token_to_text(Tree))/*
+    console.log("result:",token_to_text(Tree))
+    /*
     let searched="x"
     let part1=reduce_completely(parse("a-a"))
     let part2=reduce_completely(parse("0"))
@@ -24,7 +25,7 @@
     {
       equationsText=searched+" = "+solutions[0]
     }
-    console.log("Solution(s):\n",equationsText)
+    console.log("Solution(s):\n",equationsText)*/
   } catch (e) {
     console.log(e.stack, e, e.message)
   }
@@ -40,8 +41,8 @@ function handleEquationSubmit(event){
     console.error("error while parsing equation. Err:\n", err)
     return
   }
-  let searched="x"
-  let {solutions,history}=solve_equation(part1,part2,"x")
+  let searched=searchVarInput.value
+  let {solutions,history}=solve_equation(part1,part2,searched)
   let solutionsHTML=""
   for(let solution of solutions){
     solutionsHTML+=`<span class="solutionBlock">${searched} = ${solution}</span>`
@@ -54,6 +55,7 @@ function handleEquationSubmit(event){
     <br/>`
     historyHTML+=actions.map(elt=>`<span class="historyBlock">${elt}</span>`).join(`<span style="text-align:center;">${point.delimiter}</span>`)
   }
+  console.log("solutions: ",solutions)
   solutionsContainer.innerHTML=solutionsHTML
   historyContainer.innerHTML=historyHTML
   console.log({history,historyHTML})
