@@ -34,11 +34,17 @@ button{
 .historyBlock{
   border: 1px solid grey;
   border-radius: 3px;
-  font-size: 1.5em;
   display: block;
   width:70%;
 }
 .historyTitleBlock{
   font-size: 2em;
   font-weight: bold;
+}
+.indented{
+  position: relative;
+  left: 13px;
+}
+h3{
+  display: block;
 }

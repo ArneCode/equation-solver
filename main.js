@@ -31,6 +31,7 @@ function start() {
   }
 }//*/
 function handleEquationSubmit(event){
+  event.preventDefault(true)
   let equationText=equationInput.value
   let [part1Text,part2Text]=equationText.replace(/ /g,"").split("=")
   let part1,part2
@@ -42,11 +43,21 @@ function handleEquationSubmit(event){
     return
   }
   let searched=searchVarInput.value
-  let {solutions,history}=solve_equation(part1,part2,searched)
+  let otherEquations=[
+    {part1:parse("a*3"),part2:parse("b")},
+    {part1:parse("b+1"),part2:parse("3")}
+  ]
+  let solutionPathElt=document.createElement("div")
+  solutionPathElt.innerHTML="<h2>Lösungsweg:</h2><br/>"
+  let childElement=document.createElement("div")
+  solutionPathElt.appendChild(childElement)
+  historyContainer.innerHTML=""
+  historyContainer.appendChild(solutionPathElt)
+  let {solutions,history}=solve_equation(part1,part2,searched,otherEquations,childElement,{},[])
   let solutionsHTML=""
   for(let solution of solutions){
     solutionsHTML+=`<span class="solutionBlock">${searched} = ${solution}</span>`
-  }
+  }/*
   let historyHTML="<h3>Lösungsweg:</h3><br/>"
   for(let point of history){
     let {title,actions}=point
@@ -54,11 +65,11 @@ function handleEquationSubmit(event){
     <span class="historyTitleBlock">${title}</span>
     <br/>`
     historyHTML+=actions.map(elt=>`<span class="historyBlock">${elt}</span>`).join(`<span style="text-align:center;">${point.delimiter}</span>`)
-  }
+  }*/
   console.log("solutions: ",solutions)
   solutionsContainer.innerHTML=solutionsHTML
-  historyContainer.innerHTML=historyHTML
-  console.log({history,historyHTML})
-  event.preventDefault(true)
+  //historyContainer.innerHTML=historyHTML
+  //console.log({history,historyHTML})
+  console.log(historyContainer)
 }
 equationForm.addEventListener("submit",handleEquationSubmit)

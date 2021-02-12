@@ -119,7 +119,7 @@ function tokenize(text) {
       index++
     }
     else {
-      throw new Error(`error: unexpected character at index ${index}, character:${text[index]}`)
+      throw new Error(`error: unexpected character at index ${index}, character:${text[index]}, text:${text}`)
     }
   }
   for (let token of tokens) {
