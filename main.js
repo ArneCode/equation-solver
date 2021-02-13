@@ -1,11 +1,11 @@
 function start() {
   try {
-    let Tree = tokenize("a*(a+1)")
+    let Tree = tokenize("(a+3)/3")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log("Tree: ",clone_entirely({Tree}))
     console.log(token_to_text(Tree))
-    Tree=reduce_completely(Tree)
+    Tree=reduce_completely(Tree,"expand",document.createElement("div"))
     console.log("reduced:",clone_entirely(Tree))
     console.log("result:",token_to_text(Tree))
     /*
@@ -45,7 +45,8 @@ function handleEquationSubmit(event){
   let searched=searchVarInput.value
   let otherEquations=[
     {part1:parse("a*3"),part2:parse("b")},
-    {part1:parse("b+1"),part2:parse("3")}
+    {part1:parse("b+1"),part2:parse("3")},
+    {part1:parse("Fisch"),part2:parse("1")}
   ]
   let solutionPathElt=document.createElement("div")
   solutionPathElt.innerHTML="<h2>Lösungsweg:</h2><br/>"
@@ -57,7 +58,11 @@ function handleEquationSubmit(event){
   let solutionsHTML=""
   for(let solution of solutions){
     solutionsHTML+=`<span class="solutionBlock">${searched} = ${solution}</span>`
-  }/*
+  }
+  if(solutions.length==0){
+    solutionsHTML+="<span class='solutionBlock'>no Solution found using the known methods</span>"
+  }
+  /*
   let historyHTML="<h3>Lösungsweg:</h3><br/>"
   for(let point of history){
     let {title,actions}=point

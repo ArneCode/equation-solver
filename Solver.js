@@ -45,9 +45,12 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
   }
   let finalSolutions = []
   for (let solution of solutions) {
+    let solutionNode=document.createElement("div")
+    solutionNode.className="historyBlock"
+    childNode.appendChild(solutionNode)
     try {
       let token = parse(solution)
-      token = reduce_completely(token)
+      token = reduce_completely(token,"expand",solutionNode)
       finalSolutions.push(token_to_text(token))
     } catch (err) {
       if (err.constructor == NegativeRootError) {
@@ -184,6 +187,7 @@ function trySolvingTactics(part1, part2, searched, historyNode = null) {
   if (result.length > 0) {
     return result
   }
+  return []
 }
 function mitternachtsformel(part1, part2, searched, historyNode = null) {
   let actions = []
@@ -221,6 +225,11 @@ function mitternachtsformel(part1, part2, searched, historyNode = null) {
     }
   }
   let [c, b, a] = ks
+    if(a==0){
+    //a is 0 (or false)
+    console.log("!a")
+    return []
+  }
   childNode.innerHTML += `<h3>Finding a, b and c</h3>
     <span class="historyBlock">
     a = ${a}
@@ -310,11 +319,12 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
         return [varPart, otherPart]
       }
       case "isolating": {
-        let newOtherPartText = step.prefix + "(" + token_to_text(otherPart) + step.action + ")"
+        let newOtherPartText = step.prefix + "(" + token_to_text(otherPart)+")" + step.action
         //actionsCall back(`${token_to_text(varPart)} = ${token_to_text(otherPart)} | ${step.action}`)
         childNode.innerHTML += `<span class="historyBlock">${token_to_text(varPart)} = ${token_to_text(otherPart)} | ${step.action}</span>`
         try {
           otherPart = parse(newOtherPartText)
+          console.log("newOtherPartText",newOtherPartText)
           otherPart = reduce_completely(otherPart, "simplify", document.createElement("div"))
           varPart = step.equation
           console.log("at end", clone_entirely({ varPart, otherPart }))
