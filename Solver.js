@@ -1,4 +1,7 @@
-function solve_equation(part1, part2, searched, otherEquations, historyNode = null, substitutions = {}, already_tried = []) {
+function solve_equation(part1, part2, searched, otherEquations, historyNode = null, subst_info = {}) {
+  // subst_info={substitutions,already_tried,already_solved}
+  // subst_info is information on how to substitute
+  let {doSubst}=getPropertys(subst_info,["doSubst"],[true])
   let history = []
   let thisNode = document.createElement("div")
   thisNode.id = "solve_equation" + Math.random()
@@ -6,20 +9,21 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
   let childNode = document.createElement("div")
   thisNode.appendChild(childNode)
   childNode.id = ("solve_equation_child_node" + Math.random())
-  //console.log(childNode,childNode.id,Math.random())
   //[part1, part2] = 
   let result = reduce_equation(part1, part2, "simplify", childNode)
-  console.log("result:", result)
   part1 = result[0]
   part2 = result[1]
-  let variables = part1.variables.concat(part2.variables)
-  let subst_result = getSubstitutions(variables.filter(v => v != searched), otherEquations, substitutions, already_tried)
-  console.log("substitutions found:", subst_result)
+  if(doSubst){
+    let variables = part1.variables.concat(part2.variables)
+  let eqvars = variables.filter(v => v != searched)
+  let subst_result = getSubstitutions(eqvars, otherEquations, subst_info)
   substitutions = subst_result.substitutions
+  subst_info.substitutions=substitutions
   if (Object.keys(substitutions).length > 0) {
-    subst_result = substitute(substitutions, part1, part2, childNode)
+    subst_result = substitute(part1, part2, childNode, subst_info)
     part1 = subst_result[0]
     part2 = subst_result[1]
+  }
   }
   let reduce_result = reduce_equation(part1, part2, "simplify", childNode)
   part1 = reduce_result[0]
@@ -45,12 +49,12 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
   }
   let finalSolutions = []
   for (let solution of solutions) {
-    let solutionNode=document.createElement("div")
-    solutionNode.className="historyBlock"
+    let solutionNode = document.createElement("div")
+    solutionNode.className = "historyBlock"
     childNode.appendChild(solutionNode)
     try {
       let token = parse(solution)
-      token = reduce_completely(token,"expand",solutionNode)
+      token = reduce_completely(token, "expand", solutionNode)
       finalSolutions.push(token_to_text(token))
     } catch (err) {
       if (err.constructor == NegativeRootError) {
@@ -64,7 +68,17 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
   //finalSolutions = finalSolutions.filter((elt, idx) => finalSolutions.indexOf(elt) == idx)
   return { solutions: finalSolutions, history }
 }
-function substitute(substitutions, part1, part2, historyNode) {
+function substitute(varPart, otherPart, historyNode, subst_info,solutionFound=true) {
+  let { substitutions, already_tried, already_solved } = getPropertys(subst_info,[
+    "substitutions",
+    "already_tried",
+    "already_solved"
+  ], [
+      {},
+      [],
+      {}
+    ])
+    console.log("substituting:",clone_entirely(arguments))
   if (Object.keys(substitutions).length == 0) {
     return [part1, part2]
   }
@@ -76,32 +90,63 @@ function substitute(substitutions, part1, part2, historyNode) {
   //childNode.className="historyBlock indented"
   let part1Text = token_to_text(part1)
   let part2Text = token_to_text(part2)
-  for (let var_name in substitutions) {
-    let subst = substitutions[var_name]
+  let part1Tried=[]
+  let part2Tried=[]
+  let vars_to_replace=clone_entirely(substitutions)
+  while((!part1Tried.includes(part1Text))||!part2Tried.includes(part2Text)){
+    part1Tried.push(part1Text)
+    part2Tried.push(part2Text)
+  for (let var_name in vars_to_replace) {
+    console.log("searching solution for",var_name,clone_entirely(substitutions))
+    let subst = vars_to_replace[var_name]
     //childNode.innerHTML+=`<h3>${token_to_text(subst.part1)} = ${token_to_text(subst.part2)}</h3>`
     //childNode.innerHTML+=`<h3>finding ${var_name}:</h3>`
-    let childSubNode = document.createElement("div")
-    childNode.appendChild(childSubNode)
-    let _substitutions = clone_entirely(substitutions)
-    delete _substitutions[var_name]
-    let solution = solve_equation(subst.part1, subst.part2, var_name, [], childSubNode, _substitutions, []).solutions[0]
+    let solution
+    if (!already_solved[var_name]) {
+      childNode.innerHTML += "solving for:" + var_name + "<br/>"
+      console.log("solving for",var_name)
+      let childSubNode = document.createElement("div")
+      childSubNode.className = "historyBlock"
+      childNode.appendChild(childSubNode)
+      /*let _substitutions = clone_entirely(substitutions)
+      delete _substitutions[var_name]*/
+      already_tried.push(token_to_text(subst.part1)+token_to_text(subst.part2))
+      //delete substitutions[var_name]
+      solution = solve_equation(subst.part1, subst.part2, var_name, [], childSubNode,{doSubst:false}).solutions[0]
+      already_solved[var_name] = solution
+    } else {
+      solution = already_solved[var_name]
+    }
+    console.log("solution found for:",var_name," : ",solution)
+    if(part1Text.includes(var_name)||part2Text.includes(var_name)){
+      console.log("deleting solution for..",var_name)
+      delete vars_to_replace[var_name]
+    }
     part1Text = part1Text.split(var_name).join(solution)
     part2Text = part2Text.split(var_name).join(solution)
-    console.log("new texts after substituting", part1Text, " = ", part2Text, { solution, substitutions }, token_to_text(subst.part1), token_to_text(subst.part2))
     childNode.innerHTML += "<br/>"
+  }
+  console.log("vars_to_replace",vars_to_replace,(!part1Tried.includes(part1Text))||!part2Tried.includes(part2Text),{part1Text,part2Text,part1Tried,part2Tried})
   }
   thisNode.appendChild(childNode)
   return [parse(part1Text), parse(part2Text)]
 }
-function getSubstitutions(variables, otherEquations, substitutions = {}, already_tried = []) {
+function getSubstitutions(variables, otherEquations, subst_info) {
+  let { substitutions,already_tried } = getPropertys(subst_info,[
+    "substitutions",
+    "already_tried"
+  ], [
+      {},
+      []
+    ])
+    console.log("inside getSubstitutions",clone_entirely(arguments),already_tried)
+    alert()
   if (variables.length == 0) {
     return { substitutions, allFound: true, vars_unknown: [] }
   }
-  console.log("get substituting the folllowing variables:" + variables.join(", "), clone_entirely(arguments))
   let unknown = []
   for (let i = 0; i < variables.length; i++) {
     let v = variables[i]
-    console.log("testing for variable..", v)
     if (substitutions[v]) {
       continue;
     }
@@ -117,8 +162,9 @@ function getSubstitutions(variables, otherEquations, substitutions = {}, already
         let solution = trySolvingTactics(eq.part1, eq.part2, v, document.createElement("div"))[0]
         if (solution) {
           let _eqvars = eqvars.filter(_v => _v != v)
-          let result = getSubstitutions(_eqvars, otherEquations, substitutions, already_tried)
-          console.log("result after trying to find a substitute for :", { eqvars, v, result, _eqvars, eq })
+          subst_info={substitutions,already_tried}
+          let result = getSubstitutions(_eqvars, otherEquations, subst_info)
+          console.log("calling getsubst inside getSubstitutions",result.substitutions,substitutions)
           if (result.allFound) {
             substitutions[v] = eq
             solutionFound = true
@@ -133,7 +179,8 @@ function getSubstitutions(variables, otherEquations, substitutions = {}, already
       //return { substitutions, allFound=false }
       let solutionFound = false
       for (let elt of missing) {
-        let result = getSubstitutions(vars_unknown, otherEquations, substitutions, already_tried)
+        subst_info={substitutions,already_tried}
+        let result = getSubstitutions(vars_unknown, otherEquations, subst_info)
         if (result.allFound) {
           substitutions[v] = elt.eq
           solutionFound = true
@@ -144,6 +191,7 @@ function getSubstitutions(variables, otherEquations, substitutions = {}, already
       }
     }
   }
+  console.log("substitutions",substitutions)
   return { substitutions, allFound: true, vars_unknown: unknown }
 }
 function trySolvingTactics(part1, part2, searched, historyNode = null) {
@@ -154,7 +202,6 @@ function trySolvingTactics(part1, part2, searched, historyNode = null) {
   let childNode = document.createElement("div")
   childNode.id = "trySolvingTactics_child_node" + Math.random()
   thisNode.appendChild(childNode)
-  console.log("trySolvingTactics nodes", { historyNode, thisNode, childNode })
   let result
   result = reduce_equation(part1, part2, "simplify", childNode)
   part1 = result[0]
@@ -225,9 +272,8 @@ function mitternachtsformel(part1, part2, searched, historyNode = null) {
     }
   }
   let [c, b, a] = ks
-    if(a==0){
+  if (a == 0) {
     //a is 0 (or false)
-    console.log("!a")
     return []
   }
   childNode.innerHTML += `<h3>Finding a, b and c</h3>
@@ -311,7 +357,6 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
     //("test")
     let step = isolate_var_step(varPart, searched)
     steps.push(step)
-    console.log("step", clone_entirely(step))
     switch (step.state) {
       case "finished": {
         //actionsCal lback(`${token_to_text(varPart)} = ${token_to_text(otherPart)}`)
@@ -319,19 +364,16 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
         return [varPart, otherPart]
       }
       case "isolating": {
-        let newOtherPartText = step.prefix + "(" + token_to_text(otherPart)+")" + step.action
+        let newOtherPartText = step.prefix + "(" + token_to_text(otherPart) + ")" + step.action
         //actionsCall back(`${token_to_text(varPart)} = ${token_to_text(otherPart)} | ${step.action}`)
         childNode.innerHTML += `<span class="historyBlock">${token_to_text(varPart)} = ${token_to_text(otherPart)} | ${step.action}</span>`
         try {
           otherPart = parse(newOtherPartText)
-          console.log("newOtherPartText",newOtherPartText)
           otherPart = reduce_completely(otherPart, "simplify", document.createElement("div"))
           varPart = step.equation
-          console.log("at end", clone_entirely({ varPart, otherPart }))
           break;
         } catch (err) {
           if (err.constructor == NegativeRootError) {
-            console.log(err, "in", newOtherPartText)
             return [varPart, otherPart]
           }
         }
@@ -340,7 +382,6 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
   }
 }
 function isolate_var_step(equation, searched) {
-  console.log("step equation got", clone_entirely(arguments))
   equation = reduce_completely(equation)
   //alert("to isolate: " + token_to_text(equation))
   if (equation.type == "word" && equation.text == searched) {
@@ -415,17 +456,16 @@ function isolate_var_step(equation, searched) {
         break;
       }
       case "div": {
-        if(val0.variables.includes(searched) && !val1.variables.includes(searched)){
-        return {
-          state: "isolating",
-          action: "*" + token_to_text(val1),
-          equation,
-          prefix: ""
+        if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
+          return {
+            state: "isolating",
+            action: "*" + token_to_text(val1),
+            equation,
+            prefix: ""
+          }
+          break;
+        } else {
         }
-        break;
-      }else{
-
-      }
       }
     }
   }
@@ -502,7 +542,7 @@ function groupWother(a, b, params/*{operandText,operandObj}*/, level = 0) {
 function doAction(newVal, mode) {
   //deside if reducer should do action if newVal is the resulting number and mode is the active mode
   return true
-  if(mode!="simplify"){
+  if (mode != "simplify") {
     return true
   }
   let ptIndex = newVal.indexOf(".")
@@ -937,6 +977,5 @@ function reduce_equation(part1, part2, mode = "simplify", historyNode = null) {
       <span class="historyBlock">${token_to_text(part1)} = ${token_to_text(part2)}</span>`)
     }
   }*/
-  console.log("endTest", { part1, part2 })
   return [part1, part2]
 }

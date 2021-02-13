@@ -131,13 +131,21 @@ String.prototype.hashCode = function () {
   return hash;
 }
 function clone_entirely(obj){
-  let clone=obj.constructor()
-  if(!["object","array"].includes(typeof obj)){
+  //console.log("cloning",obj,typeof obj,obj.constructor)
+  let clone
+  if(obj.constructor==Array){
+    clone=[]
+  }else if((typeof obj)=="object"){
+    clone={}
+  }else{
     return obj
   }
   for(let attr in obj){
+    if(obj.hasOwnProperty(attr)){
     clone[attr]=clone_entirely(obj[attr])
+    }
   }
+  //console.log("returning:",clone)
   return clone
 }
 Array.prototype.compare = function (other) {
@@ -178,4 +186,16 @@ function isInt(str){
     }
   }
   return false
+}
+function getPropertys(obj,names,alternative){
+  let result={}
+  for(i in names){
+    let name=names[i]
+    if(obj[name]){
+      result[name]=obj[name]
+    }else{
+      result[name]=alternative[i]
+    }
+  }
+  return result
 }
