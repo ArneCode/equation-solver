@@ -234,3 +234,13 @@ function parse(text) {
   let Tree = createSyntaxTree(tokens)[0]
   return Tree
 }
+function parse_equation(text){
+  if(!text.includes("=")){
+    text+="=0"
+  }
+  text=text.replace(/\s/g,"")
+  let [part1Text,part2Text]=text.split("=")
+  let part1=parse(part1Text)
+  let part2=parse(part2Text)
+  return {part1,part2}
+}

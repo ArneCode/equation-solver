@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<link rel="stylesheet" type="text/css" href="style.css">
-  <link rel="stylesheet" type="text/css" href="dropdown.css">
+	<link rel="stylesheet" type="text/css" href="dropdown.css">
 	<meta charset="utf-8">
 </head>
 
 <body onload="start()">
+	<div id="mainContent">
+		<div class="top-right">
+			<button id="settingsButton">settings</button>
+    </div>
 	<div class="center" style="top:30%;">
 		<form id="equationForm">
 			<input id="equationInput" placeholder="equation" class="large"></input>
@@ -15,9 +20,32 @@
       searched var:
       <input id="searchVarInput" placeholder="searched var" value="x"></input>
     </form>
+    <div id="equationsInputDiv">
+      <h3>Values/Equations</h3>
+      <form id="mainContentAddEquationForm">
+        <input id="addEquationsInput">
+        <button type="submit">+</button>
+      </form>
+      <div id="enteredEquations"></div>
+      <button onclick="enteredEquations.innerHTML=''">remove all</button>
+    </div>
     <div id="solutionsContainer">
     </div>
     <div id="historyContainer">
+    </div>
+  </div>
+  </div>
+  <div id="settingsContent" style="display:none">
+    <div class="top-right">
+      <button id="mainContentButton">back to Main</button>
+    </div>
+    <div class="sidenav">
+      <a href="#equations">equations</a>
+      <a href="#units">units</a>
+      <a href="#">elt3</a>
+    </div>
+    <div class="center" style="top:30%;">
+      <h2>Settings</h2>
     </div>
   </div>
   <script src="dom.js"></script>

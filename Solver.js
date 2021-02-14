@@ -174,9 +174,18 @@ function substitute_recursively(_subst_solutions_list, subst_solutions_list, sol
   if (solution.includes(var_name)) {
     let subnodes = []
     for (let subst_solution of subst_solutions) {
-      let solutionText = solution.split(var_name).join(subst_solution)
+      console.log("subst_solution:",subst_solution,subst_solutions)
+      let solutionText = solution.split(var_name).join("("+subst_solution+")")
       solutionToken = parse(solutionText)
-      solutionToken = reduce_completely(solutionToken, "simplify", document.createElement("div"))
+      try {
+        solutionToken = reduce_completely(solutionToken, "simplify", document.createElement("div"))
+      }catch(err){
+        if(err.constructor==NegativeRootError){
+          subnodes.push({val:solutionText,subnodes:[]})
+          console.log("negative root error, continuing")
+          continue
+        }
+      }
       if (token_to_text(solutionToken) == solutionText) {
         subnodes.push(substitute_recursively(_subst_solutions_list, subst_solutions_list, solutionText, true))
       } else {
@@ -186,6 +195,7 @@ function substitute_recursively(_subst_solutions_list, subst_solutions_list, sol
         })
       }
     }
+    console.log("subnodes:",subnodes)
     return { val: solution, subnodes }
   } else {
     return substitute_recursively(_subst_solutions_list, subst_solutions_list, solution, replaced_something)
@@ -220,7 +230,6 @@ function getSubstitutions(variables, otherEquations, subst_info) {
       {},
       []
     ])
-  alert()
   if (variables.length == 0) {
     return { substitutions, allFound: true, vars_unknown: [] }
   }
@@ -866,10 +875,10 @@ function reduce_token(token, mode = "simplify", level = 0) {
             testText = "(" + token_to_text(other) + "*" + token_to_text(div.val0) + ")"
             let testToken = parse(testText)
             testToken = reduce_token(testToken, mode, level + 1)
-            if(token_to_text(testToken)!=testText){
-              let newText=token_to_text(testToken)+"/"+token_to_text(div.val1)
-              list[i1]=parse(newText)
-              list.splice(i2,1)
+            if (token_to_text(testToken) != testText) {
+              let newText = token_to_text(testToken) + "/" + token_to_text(div.val1)
+              list[i1] = parse(newText)
+              list.splice(i2, 1)
               return restart_loop()
             }
           }

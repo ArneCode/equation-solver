@@ -43,11 +43,7 @@ function handleEquationSubmit(event){
     return
   }
   let searched=searchVarInput.value
-  let otherEquations=[
-    {part1:parse("a*3"),part2:parse("b")},
-    {part1:parse("b+c"),part2:parse("3")},
-    {part1:parse("3*c^2-2*c+10"),part2:parse("20")}
-  ]
+  let otherEquations=getEquations()
   let solutionPathElt=document.createElement("div")
   solutionPathElt.innerHTML="<h2>Lösungsweg:</h2><br/>"
   let childElement=document.createElement("div")
