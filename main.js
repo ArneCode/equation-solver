@@ -1,6 +1,6 @@
 function start() {
   try {
-    let Tree = tokenize("(a+3)/3")
+    let Tree = tokenize("3*3/b")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log("Tree: ",clone_entirely({Tree}))
@@ -45,8 +45,8 @@ function handleEquationSubmit(event){
   let searched=searchVarInput.value
   let otherEquations=[
     {part1:parse("a*3"),part2:parse("b")},
-    {part1:parse("b+1"),part2:parse("3")},
-    {part1:parse("Fisch"),part2:parse("1")}
+    {part1:parse("b+c"),part2:parse("3")},
+    {part1:parse("3*c^2-2*c+10"),part2:parse("20")}
   ]
   let solutionPathElt=document.createElement("div")
   solutionPathElt.innerHTML="<h2>Lösungsweg:</h2><br/>"
@@ -54,7 +54,7 @@ function handleEquationSubmit(event){
   solutionPathElt.appendChild(childElement)
   historyContainer.innerHTML=""
   historyContainer.appendChild(solutionPathElt)
-  let {solutions,history}=solve_equation(part1,part2,searched,otherEquations,childElement,{},[])
+  let solutions=solve_equation(part1,part2,searched,otherEquations,childElement,{},[])
   let solutionsHTML=""
   for(let solution of solutions){
     solutionsHTML+=`<span class="solutionBlock">${searched} = ${solution}</span>`
