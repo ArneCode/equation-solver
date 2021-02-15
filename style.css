@@ -15,6 +15,7 @@ input.large{
 .center{
   position: relative;
   left: 10%;
+  max-width: 70%;
 }
 input{
   border-radius: 5px;
@@ -87,7 +88,10 @@ h3{
   color: grey;
   background-color:rgb(183, 183, 183);
 }
-
+.active{
+  color:black;
+  background-color:rgb(181, 181, 181);
+}
 /* Style page content */
 .main {
   margin-left: 160px; /* Same as the width of the sidebar */
@@ -115,9 +119,22 @@ h3{
   background-color:transparent;
   display:block;
 }
+.knownEquation{
+  border:0px;
+  border-radius: 0px;
+  background-color:transparent;
+  display:block;
+}
 .error{
   border:1px solid red;
 }
 .error:hover{
   background-color:rgb(250, 174, 174);
+}
+p{
+  overflow:hidden;
+}
+#addedEquationsWarn{
+  color:red;
+  font-size:1em;
 }

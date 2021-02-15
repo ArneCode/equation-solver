@@ -95,7 +95,7 @@ function subst_incomp(part1, part2, historyNode, subst_info) {
       let subst = vars_to_replace[var_name]
       let solution
       if (!already_solved[var_name]) {
-        childNode.innerHTML += "solving for:" + var_name + "<br/>"
+        childNode.innerHTML += "<br/>"
         let childSubNode = document.createElement("div")
         childSubNode.className = "historyBlock"
         childNode.appendChild(childSubNode)
@@ -134,7 +134,7 @@ function subst_comp(solutions, searched, historyNode, subst_info) {
   let subst_solutions_list = []
   for (let var_name in substitutions) {
     let subst = substitutions[var_name]
-    childNode.innerHTML += "solving for:" + var_name + "<br/>"
+    childNode.innerHTML +="<br/>"
     let childSubNode = document.createElement("div")
     childSubNode.className = "historyBlock"
     childNode.appendChild(childSubNode)
@@ -159,6 +159,7 @@ function subst_comp(solutions, searched, historyNode, subst_info) {
   for (let solution_path of solution_paths) {
     pathsNode.innerHTML += `<span>${solution_path}</span><br/>`
   }
+  childNode.innerHTML+="<br/>"
   childNode.appendChild(pathsNode)
   return subst_solutions
 }

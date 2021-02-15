@@ -30,6 +30,10 @@ function start() {
     console.log(e.stack, e, e.message)
   }
 }//*/
+setKnownEquations([
+  "s=1/2*g*t^2",
+  "g=9.81"
+])
 function handleEquationSubmit(event){
   event.preventDefault(true)
   let equationText=equationInput.value
@@ -43,7 +47,7 @@ function handleEquationSubmit(event){
     return
   }
   let searched=searchVarInput.value
-  let otherEquations=getEquations()
+  let otherEquations=getEquations().concat(getKnownEquations())
   let solutionPathElt=document.createElement("div")
   solutionPathElt.innerHTML="<h2>Lösungsweg:</h2><br/>"
   let childElement=document.createElement("div")
