@@ -30,8 +30,10 @@ function variablesInBlock(token) {
     variables = variables.concat(variablesInBlock(token.content))
   } else if (token.type == "word") {
     variables = [token.text]
+  } else if (token.type == "sign") {
+    variables = variables.concat(variablesInBlock(token.val))
   }
-  variables=variables.filter((v,idx)=>variables.indexOf(v)==idx)
+  variables = variables.filter((v, idx) => variables.indexOf(v) == idx)
   token.variables = variables
   return variables
 }
@@ -230,17 +232,30 @@ function createSyntaxTree(tokens, level = 4) {
   //alert("test")
 }
 function parse(text) {
+  text = cleanSigns(text)
   let tokens = tokenize(text)
   let Tree = createSyntaxTree(tokens)[0]
+  console.log("parse result",Tree)
+  //alert("parsing... "+text)
   return Tree
 }
-function parse_equation(text){
-  if(!text.includes("=")){
-    text+="=0"
+function parse_equation(text) {
+  if (!text.includes("=")) {
+    text += "=0"
   }
-  text=text.replace(/\s/g,"")
-  let [part1Text,part2Text]=text.split("=")
-  let part1=parse(part1Text)
-  let part2=parse(part2Text)
-  return {part1,part2}
+  text = text.replace(/\s/g, "")
+  let [part1Text, part2Text] = text.split("=")
+  let part1 = parse(part1Text)
+  let part2 = parse(part2Text)
+  return { part1, part2 }
+}
+function cleanSigns(text) {
+  let before = ""
+  while (text != before) {
+    before = text
+    text = text.replace(/\-\-/, "+")
+    text = text.replace(/\++/, "+")
+    text = text.replace(/(\+\-|\-\+)/, "-")
+  }
+  return text
 }

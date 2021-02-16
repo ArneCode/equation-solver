@@ -1,11 +1,11 @@
 function start() {
   try {
-    let Tree = tokenize("3*3/b")
+    let Tree = tokenize("((50*[m]*(9.81*[m]/[s]^2))/0.5)^0.5")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log("Tree: ",clone_entirely({Tree}))
     console.log(token_to_text(Tree))
-    Tree=reduce_completely(Tree,"expand",document.createElement("div"))
+    Tree=reduce_completely(Tree,"simplify",document.createElement("div"))
     console.log("reduced:",clone_entirely(Tree))
     console.log("result:",token_to_text(Tree))
     /*
@@ -30,9 +30,11 @@ function start() {
     console.log(e.stack, e, e.message)
   }
 }//*/
+//window.onload=start
+window.addEventListener("load",start)
 setKnownEquations([
   "s=1/2*g*t^2",
-  "g=9.81"
+  "g=9.81*[m]/[s]^2"
 ])
 function handleEquationSubmit(event){
   event.preventDefault(true)
@@ -48,6 +50,7 @@ function handleEquationSubmit(event){
   }
   let searched=searchVarInput.value
   let otherEquations=getEquations().concat(getKnownEquations())
+  console.log("otherEquations",otherEquations)
   let solutionPathElt=document.createElement("div")
   solutionPathElt.innerHTML="<h2>Lösungsweg:</h2><br/>"
   let childElement=document.createElement("div")

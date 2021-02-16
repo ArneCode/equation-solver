@@ -11,6 +11,8 @@ let enteredEquations = document.getElementById("enteredEquations")
 let addEquationsInput = document.getElementById("addEquationsInput")
 let addedEquationsWarn = document.getElementById("addedEquationsWarn")
 let knownEquationsDiv = document.getElementById("knownEquationsDiv")
+let addedKnownEquationsDiv = document.getElementById("addedKnownEquationsDiv")
+let knownEquationsInput = document.getElementById("knownEquationsInput")
 settingsButton.addEventListener("click", () => {
   mainContent.style.display = "none"
   settingsContent.style.display = "block"
@@ -130,18 +132,86 @@ function setKnownEquations(eqs) {
     knownEquationsDiv.appendChild(eqNode)
   }
 }
-function getKnownEquations(){
-  let eqs=[]
-  console.log({knownEquationsDiv})
-  for(let eqNode of knownEquationsDiv.childNodes){
-    if(eqNode.nodeName!="INPUT"){
-      console.log("skipping",eqNode,eqNode.nodeName)
+function getKnownEquations() {
+  let eqs = []
+  console.log({ knownEquationsDiv })
+  let addedKnownEqs=Array.prototype.slice.call(addedKnownEquationsDiv.childNodes)
+  let knownEqs=Array.prototype.slice.call(knownEquationsDiv.childNodes)
+  for (let eqNode of addedKnownEqs.concat(knownEqs)) {
+    if (eqNode.nodeName != "INPUT") {
+      console.log("skipping", eqNode, eqNode.nodeName)
       continue
     }
-    console.log({eqNode})
-    if(!eqNode.className.includes("error")){
+    console.log({ eqNode })
+    if (!eqNode.className.includes("error")) {
       eqs.push(parse_equation(eqNode.value))
     }
   }
   return eqs
 }
+document.getElementById("settingsKnownEquationsForm").addEventListener("submit", evt => {
+  evt.preventDefault()
+  let eqNode = document.createElement("input")
+  eqNode.className = "knownEquation"
+  let eq = knownEquationsInput.value
+  if(eq==""){
+    return
+  }
+  knownEquationsInput.value = ""
+  addedKnownEquationsDiv.appendChild(eqNode)
+  eqNode.value=eq
+  try {
+    parse_equation(eq)
+  } catch (err) {
+    eqNode.classList.add("error")
+  }
+    save_added_known_equations()
+  eqNode.addEventListener("blur", () => {
+    if (eqNode.value == "") {
+      eqNode.remove()
+    }
+    try {
+      parse_equation(eqNode.value)
+      eqNode.classList.remove("error")
+    } catch (err) {
+      eqNode.classList.add("error")
+    }
+    save_added_known_equations()
+  })
+})
+function save_added_known_equations(){
+  let eqs=[]
+  for(let eqNode of addedKnownEquationsDiv.childNodes){
+    if(eqNode.nodeName=="INPUT"&&!eqNode.className.includes("error")){
+      eqs.push(eqNode.value)
+    }
+  }
+  localStorage.setItem("added_known_equations",eqs.join("|||"))
+}
+function load_added_known_equations(){
+  let eqs=localStorage.getItem("added_known_equations")
+  console.log("load_added_known_equations",{eqs})
+  if(!eqs){
+    return
+  }
+  eqs=eqs.split("|||")
+  for(let eq of eqs){
+    let eqNode=document.createElement("input")
+    eqNode.value=eq
+    addedKnownEquationsDiv.appendChild(eqNode)
+    eqNode.className="knownEquation"
+      eqNode.addEventListener("blur", () => {
+    if (eqNode.value == "") {
+      eqNode.remove()
+    }
+    try {
+      parse_equation(eqNode.value)
+      eqNode.classList.remove("error")
+    } catch (err) {
+      eqNode.classList.add("error")
+    }
+    save_added_known_equations()
+  })
+  }
+}
+window.addEventListener("load",load_added_known_equations)

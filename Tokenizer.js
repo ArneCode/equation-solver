@@ -22,10 +22,10 @@ let parantheses = "()"
 let braces = "{}"
 function tokenize(text) {
   //alert("tokenizing... "+text)
-  if(!(typeof text=="string")){
-    throw new Error("input to tokenize must be a string, not"+text)
+  if (!(typeof text == "string")) {
+    throw new Error("input to tokenize must be a string, not" + text)
   }
-  if(text==""){
+  if (text == "") {
     throw new Error("input to tokenize cannot be empty string")
   }
   //alert(text)
@@ -33,30 +33,30 @@ function tokenize(text) {
   let index = 0
   let curr_token = ""
   while (index < text.length) {
-    if ((NUM+"-").includes(text[index])) {
-      let numrx=RegExp(/^(\+|-)?\d+(\.\d+)?([eE](\+|-)?\d+)?/)
+    if ((NUM + "-").includes(text[index])) {
+      let numrx = RegExp(/^(\+|-)?\d+(\.\d+)?([eE](\+|-)?\d+)?/)
       //alert("substr: "+text.substr(index)+"\nindex: "+index)
       //numrx.exec(text.substr(index))
-      let subtext=text.substr(index)
-      let match=subtext.match(numrx)
-      if(match){
-      let numlength=match[0].length
-      if(numlength>0){
-        let numText=text.substr(index,numlength)
-        let val=Number(numText)
-        tokens.push({
-        text: numText,
-        val,
-        type: "number",
-        factor: 1
-      })
-        index+=numlength
+      let subtext = text.substr(index)
+      let match = subtext.match(numrx)
+      if (match) {
+        let numlength = match[0].length
+        if (numlength > 0) {
+          let numText = text.substr(index, numlength)
+          let val = Number(numText)
+          tokens.push({
+            text: numText,
+            val,
+            type: "number",
+            factor: 1
+          })
+          index += numlength
         }
-      }else{
+      } else {
         tokens.push({
-          text:"-",
-          type:"sign",
-          factor:1
+          text: "-",
+          type: "sign",
+          factor: 1
         })
         index++
       }
@@ -76,7 +76,8 @@ function tokenize(text) {
         factor: 1
       })
       curr_token = ""
-    } else if (operandChars.includes(text[index])) {
+    }
+    else if (operandChars.includes(text[index])) {
       curr_token = text[index]
       while (index < text.length) {
         index++
@@ -109,12 +110,40 @@ function tokenize(text) {
         factor: 1
       });
       index++;
-    } else if(text[index]=="±"){
+    } else if ("[".includes(text[index])) {
+      let unitName = ""
+      let endFound = false
+      index++
+      for (index; index < text.length; index++) {
+        if (text[index] == "]") {
+          endFound = true
+          index++
+          break
+        } else {
+          unitName += text[index]
+        }
+      }
+      if (endFound) {
+        if (RegExp(/^[a-z]+$/i).test(unitName)) {
+          tokens.push({
+            text: "[" + unitName + "]",
+            type: "unit",
+            factor: 1,
+            name:unitName
+          })
+        } else {
+          throw new Error(unitName + " is not a valid unit name")
+        }
+      } else {
+        throw new Error("unmatching square Brackets")
+      }
+    }
+    else if (text[index] == "±") {
       tokens.push({
-        text:"±",
-        type:"sign",
-        factor:1,
-        name:"plusminus"
+        text: "±",
+        type: "sign",
+        factor: 1,
+        name: "plusminus"
       })
       index++
     }
