@@ -13,6 +13,7 @@ let addedEquationsWarn = document.getElementById("addedEquationsWarn")
 let knownEquationsDiv = document.getElementById("knownEquationsDiv")
 let addedKnownEquationsDiv = document.getElementById("addedKnownEquationsDiv")
 let knownEquationsInput = document.getElementById("knownEquationsInput")
+let addUnitForm=document.getElementById("addUnitForm")
 settingsButton.addEventListener("click", () => {
   mainContent.style.display = "none"
   settingsContent.style.display = "block"
@@ -74,7 +75,6 @@ window.onload = () => {
   let sections = document.getElementsByClassName("section")
   document.querySelector(`a[href*=${sections[0].id}]`).classList.add("active")
   window.addEventListener("scroll", () => {
-    //console.log("scrolling")
     for (let elt of sections) {
       let a = document.querySelector(`a[href*=${elt.id}]`)
       if (isElementInViewport(elt)) {
@@ -134,15 +134,12 @@ function setKnownEquations(eqs) {
 }
 function getKnownEquations() {
   let eqs = []
-  console.log({ knownEquationsDiv })
   let addedKnownEqs=Array.prototype.slice.call(addedKnownEquationsDiv.childNodes)
   let knownEqs=Array.prototype.slice.call(knownEquationsDiv.childNodes)
   for (let eqNode of addedKnownEqs.concat(knownEqs)) {
     if (eqNode.nodeName != "INPUT") {
-      console.log("skipping", eqNode, eqNode.nodeName)
       continue
     }
-    console.log({ eqNode })
     if (!eqNode.className.includes("error")) {
       eqs.push(parse_equation(eqNode.value))
     }
@@ -190,7 +187,6 @@ function save_added_known_equations(){
 }
 function load_added_known_equations(){
   let eqs=localStorage.getItem("added_known_equations")
-  console.log("load_added_known_equations",{eqs})
   if(!eqs){
     return
   }
@@ -215,3 +211,7 @@ function load_added_known_equations(){
   }
 }
 window.addEventListener("load",load_added_known_equations)
+addUnitForm.addEventListener("submit",evt=>{
+  evt.preventDefault()
+  
+})

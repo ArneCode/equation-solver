@@ -235,8 +235,6 @@ function parse(text) {
   text = cleanSigns(text)
   let tokens = tokenize(text)
   let Tree = createSyntaxTree(tokens)[0]
-  console.log("parse result",Tree)
-  //alert("parsing... "+text)
   return Tree
 }
 function parse_equation(text) {
