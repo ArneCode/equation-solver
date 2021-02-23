@@ -232,6 +232,9 @@ function createSyntaxTree(tokens, level = 4) {
   //alert("test")
 }
 function parse(text) {
+  if(text.includes("(a)*(c)")){
+    console.log(new Error("errrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"+text))
+  }
   text = cleanSigns(text)
   let tokens = tokenize(text)
   let Tree = createSyntaxTree(tokens)[0]

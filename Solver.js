@@ -181,7 +181,7 @@ function substitute_recursively(_subst_solutions_list, subst_solutions_list, sol
       solutionText = token_to_text(remove_unnessesary_brackets(solutionToken))
       solutionToken = parse(solutionText)
       try {
-        solutionToken = reduce_completely(solutionToken, "simplify", document.createElement("div"))
+        solutionToken = reduce_completely(solutionToken, "expand", document.createElement("div"))
       } catch (err) {
         if (err.constructor == NegativeRootError) {
           subnodes.push({ val: solutionText, subnodes: [], isError: true })
@@ -588,21 +588,24 @@ function groupWother(a, b, params, already_reduced = [], level = 0) {
   }
 
   let gContent = group.content
-  if (gContent.name == "div" && operandObj.name == "div") {
-    return null
-  }
+  /* if (gContent.name == "div" && operandObj.name == "div"||(gContent.name == "punkt" && operandObj.name == "div")) {
+     return null
+   }*/
   let otherText = token_to_text(other)
-  if (gContent.level >= operandObj.level) {
+  if ((gContent.level >= operandObj.level || (gContent.name == "punkt" && operandObj.name == "div")) && !(gContent.name == "div" && operandObj.name == "div")) {
     let newText
     if (gFirst) {
       newText = token_to_text(gContent) + operandText + otherText
     } else {
+      if (operandObj.name == "div" && gContent.name == "punkt") {
+        return null
+      }
       newText = otherText + operandText + token_to_text(gContent)
     }
     let newToken = parse(newText)
     newToken = reduce_token(newToken, reduce_mode, already_reduced, level)
     return newToken
-  } else if (!(other.name == "pow" && gContent.level == 0 || gContent.name == "div" && operandObj.name == "div")) {
+  } else if (!((other.name == "pow" && gContent.level == 0) || (gContent.name == "div" && operandObj.name == "div"))) {
     let newTexts = []
     let content = []//subnodes of content in group
     if (gContent.type == "op") {
@@ -618,11 +621,9 @@ function groupWother(a, b, params, already_reduced = [], level = 0) {
     }
     let newText = newTexts.join(gContent.operand)
     let newToken = parse(newText)
-    try{
-    newToken = reduce_token(newToken, reduce_mode, already_reduced, level)
-    }catch(err){
-      console.log("abv error",clone_entirely({newText,newToken}))
-      alert("error stop")
+    try {
+      newToken = reduce_token(newToken, reduce_mode, already_reduced, level)
+    } catch (err) {
       throw err
     }
     return newToken
@@ -665,10 +666,7 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
   //    (a+3)^2 => a^2+6*a+9 || a^2+6*a+9 => (a+3)^2
   // - "linearfactor"
   //    a^2+6*a+9 => (a+3)^2 //not implemented jet
-  if(mode=="expand"){
-    console.log("reduce_token expand",clone_entirely({text:token_to_text(token),arguments}))
-  }
-  if(token_to_text(token).includes("Infinity")){
+  if (token_to_text(token).includes("Infinity")) {
     throw new Error("Infinity")
   }
   level++
@@ -689,7 +687,25 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
         let newBaseExpText = "(" + token_to_text(val0.val1) + "*" + token_to_text(val1) + ")"
         val0.val1 = reduce_token(parse(newBaseExpText), mode, already_reduced, level)
         return val0
-      } else if (val1.type == "number") {
+      } if (val0.type == "group" && mode == "expand") {
+        let gContent = val0.content
+        if (gContent.name == "punkt") {
+          let testText = "(" + gContent.content.map(t => "(" + token_to_text(t) + ")" + "^" + token_to_text(val1)).join("*") + ")"
+          let testToken = parse(testText)
+          testToken = reduce_token(testToken, mode, already_reduced, level)
+          if (token_to_text(testToken) != testText) {
+            return testToken
+          }
+        } else if (gContent.name == "div") {
+          let testText = `(${token_to_text(gContent.val0)}^${token_to_text(val1)}/${token_to_text(gContent.val1)}^${token_to_text(val1)})`
+          let testToken = parse(testText)
+          testToken = reduce_token(testToken, mode, already_reduced, level)
+          if (token_to_text(testToken) != testText) {
+            return testToken
+          }
+        }
+      }
+      if (val1.type == "number") {
         if (val0.type == "number") {
           if (val1.val % 1 != 0 && val0.val < 0) {
             throw new NegativeRootError("negative root, solution might be to implement i", val0.val, val1.val)
@@ -698,7 +714,6 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
           return parse(String(newVal))
         }
         if (["group"].includes(val0.type) && mode == "expand" && val1.val > 1) {
-          //alert("here")
           let gText = token_to_text(val0)
           let testTexts = new Array(Math.floor(val1.val)).fill(gText)
           let rest = val1.val % 1
@@ -714,7 +729,8 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
             return token
           }
 
-        } else if (val1.val == 1) {
+        }
+        else if (val1.val == 1) {
           return val0
         } else if (val1.val == 0) {
           return parse("1")
@@ -739,6 +755,14 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
       if (val1.val == 0) {
         throw new ZeroDivisionError()
       }
+      let info0 = getInfo(val0)
+      let info1 = getInfo(val1)
+      if (info0.kind == info1.kind) {
+        let newVal = info0.factor / info1.factor
+        if (doAction(newVal, mode))
+          return parse(String(newVal))
+        else return token
+      }
       if (mode == "expand") {
         let gwotherResult = groupWother(val0, val1, { operandText: token.operand, operandObj: token, reduce_mode: mode }, already_reduced)
         if (gwotherResult) {
@@ -754,14 +778,22 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
         }
         else return token
       }
-      else if (val1.name == "div") {
-        let testText = `(${token_to_text(val0)}/${token_to_text(val1.val0)}*${token_to_text(val1.val1)})`
+      if (val1.name == "div") {
+        let testText = `(${token_to_text(val0)}*${token_to_text(val1.val1)})/${token_to_text(val1.val0)}`
         let testToken = parse(testText)
         testToken = reduce_token(testToken, mode, already_reduced, level)
         if (token_to_text(testToken) != testText) {
           return testToken
+        }else{
+          testText=`(${token_to_text(val0)}/${token_to_text(val1.val0)})*${token_to_text(val1.val1)}`
+          testToken=parse(testText)
+          testToken=reduce_token(testToken,mode,already_reduced,level)
+          if(token_to_text(testToken)!=testText){
+            return testToken
+          }
         }
       }
+        //throw
       if (val0.type == "group" && val1.type == "group") {
         let gInfo0 = getInfo(val0.content)
         let gInfo1 = getInfo(val1.content)
@@ -772,7 +804,6 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
         }
       }
       if (val0.type == "group") {
-        //alert("test")
         let gInfo = getInfo(val0.content)
         let info1 = getInfo(val1)
         if (gInfo.kind == info1.kind) {
@@ -780,14 +811,18 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
           if (doAction(newVal, mode))
             return parse(String(newVal))
           else return token
-        } else if (val0.content.name == "div") {
+        }
+        if (val0.content.name == "div") {
           let gContent = val0.content
-          let newDivisor = `(${token_to_text(gContent.val1)}*${token_to_text(val1)})`
+          let newText = `${token_to_text(gContent.val0)}/(${token_to_text(gContent.val1)}*${token_to_text(val1)})`
+          let newToken = parse(newText)
+          newToken = reduce_token(newToken, mode, already_reduced, level)
+          return newToken
         }
       }
       if (val1.type == "group") {
         let gInfo = getInfo(val1.content)
-        let info0 = getInfo(val0)
+        info0 = getInfo(val0)
         if (gInfo.kind == info0.kind) {
           let newVal = String(info0.factor / gInfo.factor)
           if (doAction(newVal, mode))
@@ -798,22 +833,23 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
           let content = val1.content.content
           for (let sub_i = 0; sub_i < content.length; sub_i++) {
             let subnode = content[sub_i]
-            if (token_to_text(subnode) == val0Text) {
-              content.splice(sub_i, 1)
-              token.val0 = parse("1")
-              return token
+            let testText=token_to_text(val0)+"/"+token_to_text(subnode)
+            let testToken=parse(testText)
+            testToken=reduce_token(testToken)
+            if(token_to_text(testToken)!=testText){
+              content.splice(sub_i,1)
+              let newText=token_to_text(testToken)+"/"+token_to_text(val1)
+              let newToken=parse(newText)
+              newToken=reduce_token(newToken)
+              return newToken
             }
           }
-        }
-      }
-      else {
-        let info0 = getInfo(val0)
-        let info1 = getInfo(val1)
-        if (info0.kind == info1.kind) {
-          let newVal = info0.factor / info1.factor
-          if (doAction(newVal, mode))
-            return parse(String(newVal))
-          else return token
+        }else if(val1.content.name=="div"){
+          token.val1=val1.content
+          let newText=token_to_text(token)
+          let newToken=parse(newText)
+          newToken=reduce_token(newToken,mode,already_reduced,level)
+          return newToken
         }
       }
       if (val0.name == "pow" && val1.name == "pow") {
@@ -920,7 +956,8 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
               return restart_loop()
             }
           }
-        } else if (info1.kind == info2.kind) {
+        } 
+        if (info1.kind == info2.kind) {
           if (info1.kind == "") {
             let newVal = info1.factor * info2.factor
             list[i1] = tokenize(String(newVal))[0]
@@ -933,16 +970,16 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
             return restart_loop
           }
         }
-        else if (elt1.val == 1) {
+        if (elt1.val == 1) {
           list[i1] = elt2
           list.splice(i2, 1)
           restart_loop()
         }
-        else if (elt2.val == 1) {
+        if (elt2.val == 1) {
           list.splice(i2, 1)
           restart_loop()
         }
-        else if (elt1.name == "div" && elt2.name == "div") {
+        if (elt1.name == "div" && elt2.name == "div") {
           let testText = `(${token_to_text(elt1.val0)}*${token_to_text(elt2.val0)})/(${token_to_text(elt1.val1)}*${token_to_text(elt2.val1)})`
           let testToken = parse(testText)
           testToken = reduce_token(testToken, mode, already_reduced, level)
@@ -980,6 +1017,21 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
             }
           }
         }
+        if (elt1.type == "group" || elt2.type == "group" && !(elt1.type == "group" && elt2.type == "group")) {
+          let group, other
+          if (elt1.type == "group") {
+            group = elt1
+            other = elt2
+          } else {
+            group = elt2
+            other = elt1
+          }
+          if (group.content.type == "number" && other.type == "number") {
+            list[i1] = parse(String(group.content.val * other.val))
+            list.splice(i2, 1)
+            return restart_loop()
+          }
+        }
       })
       if (token.content.length == 1) {
         return token.content[0]
@@ -990,9 +1042,7 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
   } else if (token.type == "group") {
     token.content = reduce_token(token.content, mode, already_reduced, level)
     let { content } = token
-    if (["number", "word", "group"].includes(content.type)) {
-      return content
-    }
+    return remove_unnessesary_brackets(token, level)
   } else if (token.type == "sign") {
     token.val = reduce_token(token.val, mode, already_reduced, level)
     if (token.text == "-") {
@@ -1010,31 +1060,35 @@ function reduce_token(token, mode = "simplify", already_reduced = [], level = 0)
   return token
 }
 function remove_unnessesary_brackets(token, level = 0) {
-  if (token.type == "group") {
-    let content = token.content
-    if (level == 0) {
-      return content
-    }
-    if (content.type == "group") {
-      return remove_unnessesary_brackets(content, level + 1)
-    } else if (content.type == "number") {
-      if (content.val >= 0) {
+  let f = (token, level) => {
+    if (token.type == "group") {
+      let content = token.content
+      if (level == 0) {
         return remove_unnessesary_brackets(content, level + 1)
       }
-    } else {
-      token.content = remove_unnessesary_brackets(content, level + 1)
+      if (["group","unit","word"].includes(content.type)) {
+        return remove_unnessesary_brackets(content, level + 1)
+      } else if (content.type == "number") {
+        if (content.val >= 0) {
+          return remove_unnessesary_brackets(content, level + 1)
+        }
+      } else {
+        token.content = remove_unnessesary_brackets(content, level + 1)
+      }
+      return token
+    } else if (token.type == "op") {
+      token.val0 = remove_unnessesary_brackets(token.val0, level + 1)
+      token.val1 = remove_unnessesary_brackets(token.val1, level + 1)
+      return token
+    } else if (token.type == "opChain") {
+      token.content = token.content.map(elt => remove_unnessesary_brackets(elt, level + 1))
+    } else if (token.type == "sign") {
+      token.val = remove_unnessesary_brackets(token.val, level + 1)
     }
     return token
-  } else if (token.type == "op") {
-    token.val0 = remove_unnessesary_brackets(token.val0, level + 1)
-    token.val1 = remove_unnessesary_brackets(token.val1, level + 1)
-    return token
-  } else if (token.type == "opChain") {
-    token.content = token.content.map(elt => remove_unnessesary_brackets(elt, level + 1))
-  } else if (token.type == "sign") {
-    token.val = remove_unnessesary_brackets(token.val, level + 1)
   }
-  return token
+  let result = f(token, level)
+  return result
 }
 function getInfo(token) {
   let info = {}
@@ -1077,6 +1131,9 @@ function token_to_text(token) {
   } else if (token.type == "opChain") {
     let text = token.content.map(elt => token_to_text(elt))
     text = text.join(token.operand)
+    if (text == "g*(s)/0.5") {
+      throw new Error("token_to_text opChain g*(s)/0.5")
+    }
     return text
   } else if (token.type == "group") {
     return "(" + token_to_text(token.content) + ")"

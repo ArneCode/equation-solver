@@ -1,6 +1,6 @@
 function start() {
   try {
-    let Tree = tokenize("(((50*[m])/0.5)/(9.81*[m]/[s]^2))^0.5")
+    let Tree = tokenize("1/(c)/(a)")
     console.log("tokenized: ",clone_entirely(Tree))
     Tree = createSyntaxTree(Tree)[0]
     console.log("Tree: ",clone_entirely(Tree))
@@ -32,7 +32,7 @@ function start() {
   }
 }//*/
 //window.onload=start
-window.addEventListener("load",start)
+//window.addEventListener("load",start)
 setKnownEquations([
   "s=1/2*g*t^2"
 ])
