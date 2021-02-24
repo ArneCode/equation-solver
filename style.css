@@ -41,6 +41,7 @@ button{
   border-radius: 3px;
   display: block;
   width:70%;
+  overflow: auto;
 }
 .historyTitleBlock{
   font-size: 2em;
@@ -137,4 +138,7 @@ p{
 #addedEquationsWarn{
   color:#ff5100;
   font-size:1em;
+}
+#equationInput{
+  width:70%;
 }

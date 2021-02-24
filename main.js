@@ -38,12 +38,15 @@ setKnownEquations([
 ])
 function handleEquationSubmit(event){
   event.preventDefault(true)
-  let equationText=equationInput.value
+  let equationLatex=equationMathField.latex()
+  let equationText=latex_to_text(equationLatex)
   let [part1Text,part2Text]=equationText.replace(/ /g,"").split("=")
   let part1,part2
   try{
   part1=parse(part1Text)
+  part1=remove_unnessesary_brackets(part1)
   part2=parse(part2Text)
+  part2=remove_unnessesary_brackets(part2)
   }catch(err){
     console.error("error while parsing equation. Err:\n", err)
     return
@@ -58,12 +61,20 @@ function handleEquationSubmit(event){
   historyContainer.innerHTML=""
   historyContainer.appendChild(solutionPathElt)
   let solutions=solve_equation(part1,part2,searched,otherEquations,childElement,{},[])
-  let solutionsHTML=""
+  //let solutionsHTML=""
+  solutionsContainer.innerHTML=""
   for(let solution of solutions){
-    solutionsHTML+=`<span class="solutionBlock">${searched} = ${solution}</span>`
+    solution=token_to_latex(parse(solution))
+    console.log("latex solution",solution)
+    let solutionBlock=document.createElement("span")
+    solutionBlock.classList.add("solutionBlock")
+    solutionBlock.innerHTML=searched+" = "+solution
+    MQ.StaticMath(solutionBlock)
+    solutionsContainer.appendChild(solutionBlock)
+    //solutionsHTML+=`<span class="solutionBlock">${searched} = ${solution}</span>`
   }
   if(solutions.length==0){
-    solutionsHTML+="<span class='solutionBlock'>no Solution found using the known methods</span>"
+    //solutionsHTML+="<span class='solutionBlock'>no Solution found using the known methods</span>"
   }
   /*
   let historyHTML="<h3>Lösungsweg:</h3><br/>"
@@ -75,7 +86,7 @@ function handleEquationSubmit(event){
     historyHTML+=actions.map(elt=>`<span class="historyBlock">${elt}</span>`).join(`<span style="text-align:center;">${point.delimiter}</span>`)
   }*/
   console.log("solutions: ",solutions)
-  solutionsContainer.innerHTML=solutionsHTML
+  //solutionsContainer.innerHTML=solutionsHTML
   //historyContainer.innerHTML=historyHTML
   //console.log({history,historyHTML})
   //console.log(historyContainer)

@@ -129,7 +129,7 @@ function tokenize(text) {
             text: "[" + unitName + "]",
             type: "unit",
             factor: 1,
-            name:unitName
+            name: unitName
           })
         } else {
           throw new Error(unitName + " is not a valid unit name")
@@ -164,4 +164,57 @@ function tokenize(text) {
     }
   }
   return tokens
+}
+function latex_to_text(latex) {
+  let text = latex
+  let before = ""
+  while (text != before) {
+    before = text
+    text = text.replace(/\\pm/g, "±")
+    text = text.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, "($1)/($2)")
+    text = text.replace(/\\(left|right)([\[\]()])/g, "$2")
+    text = text.replace(/\\cdot/g, "*")
+  }
+  return text
+}
+function token_to_latex(token, gReturn = false) {
+  //console.log("token_to_latex",token_to_text(token))
+  let text = ""
+  if (token.type == "opChain") {
+    let subTexts = []
+    for (let subnode of token.content) {
+      subTexts.push(token_to_latex(subnode))
+    }
+    text += subTexts.join(token.operand)
+  } else if (token.type == "op") {
+    if (token.name == "div") {
+      let text0 = token_to_latex(token.val0,true)
+      let text1 = token_to_latex(token.val1,true)
+      text += `\\frac{${text0}}{${text1}}`
+    } else if (token.name == "pow") {
+      let text0 = token_to_latex(token.val0)
+      let text1 = token_to_latex(token.val1,true)
+      text += text0 + "^{"+text1+"}"
+    }
+  } else if (token.type == "group") {
+    let cText = token_to_latex(token.content,true)
+    if(gReturn){
+      return cText
+    }
+    text += "\\left(" + cText + "\\right)"
+  } else if (["word", "unit","number"].includes(token.type)) {
+    text += token_to_text(token)
+  } else if (token.type == "sign") {
+    text += token.text + token_to_latex(token.val)
+  }
+  return text_to_latex(text)
+}
+function text_to_latex(text){
+  let before=""
+  while(before!=text){
+    before=text
+    text=text.replace(" \\pm ","±")
+    text=text.replace(/\*/g," \\cdot ")
+  }
+  return text
 }

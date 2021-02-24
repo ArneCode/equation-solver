@@ -157,7 +157,11 @@ function subst_comp(solutions, searched, historyNode, subst_info) {
   let pathsNode = document.createElement("div")
   pathsNode.className = "historyBlock"
   for (let solution_path of solution_paths) {
-    pathsNode.innerHTML += `<span>${cleanSigns(solution_path)}</span><br/>`
+    let pathSpan=document.createElement("span")
+    pathSpan.innerHTML=solution_path
+    MQ.StaticMath(pathSpan)
+    //pathsNode.innerHTML += `<span>${cleanSigns(solution_path)}</span><br/>`
+    pathsNode.appendChild(pathSpan)
   }
   childNode.innerHTML += "<br/>"
   childNode.appendChild(pathsNode)
@@ -206,7 +210,7 @@ function substitute_recursively(_subst_solutions_list, subst_solutions_list, sol
 function subst_tree_arr(subst_tree, solution_path = "") {
   let solution = subst_tree.val
   if (solution) {
-    solution_path += " = " + solution
+    solution_path += " = " + token_to_latex(parse(solution))
   }
   if (subst_tree.subnodes.length == 0) {
     if (subst_tree.isError) {
@@ -448,12 +452,27 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
     steps.push(step)
     switch (step.state) {
       case "finished": {
-        childNode.innerHTML += `<span class="historyBlock">${token_to_text(varPart)} = ${token_to_text(otherPart)}</span>`
+        let historyBlock=document.createElement("span")
+        historyBlock.className="historyBlock"
+        historyBlock.innerHTML=`${token_to_latex(varPart)}=${token_to_latex(otherPart)}`
+        MQ.StaticMath(historyBlock)
+        childNode.appendChild(historyBlock)
+        //childNode.innerHTML += `<span class="historyBlock"></span>`
         return [varPart, otherPart]
       }
       case "isolating": {
         let newOtherPartText = step.prefix + "(" + token_to_text(otherPart) + ")" + step.action
-        childNode.innerHTML += cleanSigns(`<span class="historyBlock">${token_to_text(varPart)} = ${token_to_text(otherPart)} | ${step.action}</span>`)
+        let historyBlock=document.createElement("span")
+        historyBlock.className="historyBlock"
+        let currEqBlock=document.createElement("span")
+        currEqBlock.innerHTML=`${token_to_latex(varPart)} = ${token_to_latex(otherPart)}`
+        console.log("currEqBlock",currEqBlock.innerHTML)
+        //historyBlock.innerHTML=`${token_to_latex(varPart)} = ${token_to_latex(otherPart)} | ${step.action}`
+        MQ.StaticMath(currEqBlock)
+        historyBlock.appendChild(currEqBlock)
+        historyBlock.innerHTML+=" | "+step.action
+        childNode.appendChild(historyBlock)
+        //childNode.innerHTML += cleanSigns(`<span class="historyBlock">${token_to_latex(varPart)} = ${token_to_latex(otherPart)} | ${step.action}</span>`)
         try {
           otherPart = parse(newOtherPartText)
           otherPart = reduce_completely(otherPart, "simplify", document.createElement("div"))

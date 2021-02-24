@@ -14,6 +14,7 @@ let knownEquationsDiv = document.getElementById("knownEquationsDiv")
 let addedKnownEquationsDiv = document.getElementById("addedKnownEquationsDiv")
 let knownEquationsInput = document.getElementById("knownEquationsInput")
 let addUnitForm=document.getElementById("addUnitForm")
+let equationMathField
 settingsButton.addEventListener("click", () => {
   mainContent.style.display = "none"
   settingsContent.style.display = "block"
@@ -88,6 +89,7 @@ window.onload = () => {
       }
     }
   })
+  equationMathField=MQ.MathField(equationInput,{})
 }
 function isElementInViewport(el) {
   //idea from https://stackoverflow.com/a/7557433, changed a lot

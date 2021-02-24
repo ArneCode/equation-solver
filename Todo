@@ -1,3 +1,7 @@
-add substitution
+add sloving by substitution
 add Satz vom Nullprodukt
-?add MathQuill (http://mathquill.com/)
+add MathQuill (http://mathquill.com/)
+  -done
+  -bugfixing not done for example -\left(\frac{50}{0.5\cdot 9.81}\right)^{0.5}
+add decimal.js from https://github.com/MikeMcl/decimal.js/
+expand units/add settings
