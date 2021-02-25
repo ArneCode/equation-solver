@@ -13,6 +13,8 @@ function indexWhereOpLevel(tokens, level) {
 function tokenPosVal(token) {
   if (token.type == "number") {
     return 0
+  }else if(token.type=="unit"){
+    return 10000+Math.abs(token.text.hashCode())
   }
   return Math.abs(token_to_text(token).hashCode())
 }

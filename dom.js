@@ -13,13 +13,19 @@ let addedEquationsWarn = document.getElementById("addedEquationsWarn")
 let knownEquationsDiv = document.getElementById("knownEquationsDiv")
 let addedKnownEquationsDiv = document.getElementById("addedKnownEquationsDiv")
 let knownEquationsInput = document.getElementById("knownEquationsInput")
-let addUnitForm=document.getElementById("addUnitForm")
+let addUnitForm = document.getElementById("addUnitForm")
+let calcCompletelyBox = document.getElementById("calcCompletelyBox")
+let calcCompletelyStop = document.getElementById("calcCompletelyStop")
+let precisionInput = document.getElementById("precisionInput")
+let useDecimalJSInput=document.getElementById("useDecimalJSInput")
 let equationMathField
 settingsButton.addEventListener("click", () => {
+  window.sessionStorage.setItem("currPage", "settings")
   mainContent.style.display = "none"
   settingsContent.style.display = "block"
 })
 mainContentButton.addEventListener("click", () => {
+  window.sessionStorage.setItem("currPage", "main")
   mainContent.style.display = "block"
   settingsContent.style.display = "none"
 })
@@ -89,7 +95,33 @@ window.onload = () => {
       }
     }
   })
-  equationMathField=MQ.MathField(equationInput,{})
+  equationMathField = MQ.MathField(equationInput, {
+    handlers: {
+      edit: function () {
+        window.sessionStorage.setItem("mainEquationLatex", equationMathField.latex())
+      },
+      enter: function () {
+        handleEquationSubmit()
+      }
+    }
+  })
+  equationMathField.latex(window.sessionStorage.getItem("mainEquationLatex") || "")
+  switch (window.sessionStorage.getItem("currPage")) {
+    case "settings": {
+      settingsButton.click()
+      break;
+    }
+    case "main": {
+      mainContentButton.click()
+      break;
+    }
+  }
+  ///calcCompletelyBox.checked=window.localStorage.getItem("calcCompletelyState")||false
+  calcCompletelyBox.checked = window.localStorage.getItem("calcCompletelyState") == "true"
+  calcCompletelyStop.value = window.localStorage.getItem("calcCompletelyStop") || "4"
+  precisionInput.value = window.localStorage.getItem("calculationPrecision") || "20"
+  Decimal.set({precision:Number(precisionInput.value)})
+  useDecimalJSInput.checked=window.localStorage.getItem("useDecimalJSInput")=="true"
 }
 function isElementInViewport(el) {
   //idea from https://stackoverflow.com/a/7557433, changed a lot
@@ -136,8 +168,8 @@ function setKnownEquations(eqs) {
 }
 function getKnownEquations() {
   let eqs = []
-  let addedKnownEqs=Array.prototype.slice.call(addedKnownEquationsDiv.childNodes)
-  let knownEqs=Array.prototype.slice.call(knownEquationsDiv.childNodes)
+  let addedKnownEqs = Array.prototype.slice.call(addedKnownEquationsDiv.childNodes)
+  let knownEqs = Array.prototype.slice.call(knownEquationsDiv.childNodes)
   for (let eqNode of addedKnownEqs.concat(knownEqs)) {
     if (eqNode.nodeName != "INPUT") {
       continue
@@ -153,18 +185,18 @@ document.getElementById("settingsKnownEquationsForm").addEventListener("submit",
   let eqNode = document.createElement("input")
   eqNode.className = "knownEquation"
   let eq = knownEquationsInput.value
-  if(eq==""){
+  if (eq == "") {
     return
   }
   knownEquationsInput.value = ""
   addedKnownEquationsDiv.appendChild(eqNode)
-  eqNode.value=eq
+  eqNode.value = eq
   try {
     parse_equation(eq)
   } catch (err) {
     eqNode.classList.add("error")
   }
-    save_added_known_equations()
+  save_added_known_equations()
   eqNode.addEventListener("blur", () => {
     if (eqNode.value == "") {
       eqNode.remove()
@@ -178,42 +210,60 @@ document.getElementById("settingsKnownEquationsForm").addEventListener("submit",
     save_added_known_equations()
   })
 })
-function save_added_known_equations(){
-  let eqs=[]
-  for(let eqNode of addedKnownEquationsDiv.childNodes){
-    if(eqNode.nodeName=="INPUT"&&!eqNode.className.includes("error")){
+function save_added_known_equations() {
+  let eqs = []
+  for (let eqNode of addedKnownEquationsDiv.childNodes) {
+    if (eqNode.nodeName == "INPUT" && !eqNode.className.includes("error")) {
       eqs.push(eqNode.value)
     }
   }
-  localStorage.setItem("added_known_equations",eqs.join("|||"))
+  localStorage.setItem("added_known_equations", eqs.join("|||"))
 }
-function load_added_known_equations(){
-  let eqs=localStorage.getItem("added_known_equations")
-  if(!eqs){
+function load_added_known_equations() {
+  let eqs = localStorage.getItem("added_known_equations")
+  if (!eqs) {
     return
   }
-  eqs=eqs.split("|||")
-  for(let eq of eqs){
-    let eqNode=document.createElement("input")
-    eqNode.value=eq
+  eqs = eqs.split("|||")
+  for (let eq of eqs) {
+    let eqNode = document.createElement("input")
+    eqNode.value = eq
     addedKnownEquationsDiv.appendChild(eqNode)
-    eqNode.className="knownEquation"
-      eqNode.addEventListener("blur", () => {
-    if (eqNode.value == "") {
-      eqNode.remove()
-    }
-    try {
-      parse_equation(eqNode.value)
-      eqNode.classList.remove("error")
-    } catch (err) {
-      eqNode.classList.add("error")
-    }
-    save_added_known_equations()
-  })
+    eqNode.className = "knownEquation"
+    eqNode.addEventListener("blur", () => {
+      if (eqNode.value == "") {
+        eqNode.remove()
+      }
+      try {
+        parse_equation(eqNode.value)
+        eqNode.classList.remove("error")
+      } catch (err) {
+        eqNode.classList.add("error")
+      }
+      save_added_known_equations()
+    })
   }
 }
-window.addEventListener("load",load_added_known_equations)
-addUnitForm.addEventListener("submit",evt=>{
+window.addEventListener("load", load_added_known_equations)
+addUnitForm.addEventListener("submit", evt => {
   evt.preventDefault()
-  
+
+})
+calcCompletelyBox.addEventListener("click", () => {
+  window.localStorage.setItem("calcCompletelyState", calcCompletelyBox.checked)
+})
+calcCompletelyStop.addEventListener("change", () => {
+  window.localStorage.setItem("calcCompletelyStop", calcCompletelyStop.value)
+})
+precisionInput.addEventListener("blur", () => {
+  if (!precisionInput.checkValidity()) {
+    alert(precisionInput.validationMessage)
+    precisionInput.value="20"
+  } else {
+    window.localStorage.setItem("calculationPrecision", precisionInput.value)
+    Decimal.set({precision:Number(precisionInput.value)})
+  }
+})
+useDecimalJSInput.addEventListener("click",()=>{
+  window.localStorage.setItem("useDecimalJS",useDecimalJSInput.checked)
 })

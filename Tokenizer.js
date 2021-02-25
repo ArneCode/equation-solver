@@ -174,6 +174,7 @@ function latex_to_text(latex) {
     text = text.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, "($1)/($2)")
     text = text.replace(/\\(left|right)([\[\]()])/g, "$2")
     text = text.replace(/\\cdot/g, "*")
+    text=text.replace(/\^\{([^{}]*)\}/g,"^($1)")
   }
   return text
 }
@@ -215,6 +216,10 @@ function text_to_latex(text){
     before=text
     text=text.replace(" \\pm ","±")
     text=text.replace(/\*/g," \\cdot ")
+    text=text.replace(/((\\left)?)\(/g,"\\left(")
+    text=text.replace(/((\\left)?)\[/g,"\\left[")
+    text=text.replace(/((\\right)?)\)/g,"\\right)")
+    text=text.replace(/((\\right)?)\]/g,"\\right]")
   }
   return text
 }
