@@ -17,6 +17,7 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
     throw new InformationError(`there wasn't enough information given to find variable ${searched}`)
   }
   let solutions = trySolvingTactics(part1, part2, searched, childNode)
+  console.log("solutions 1",solutions)
   for (let i = 0; i < solutions.length; i++) {
     let solution = solutions[i]
     if (solution.includes("±")) {
@@ -35,7 +36,7 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
     childNode.appendChild(solutionNode)
     try {
       let token = parse(solution)
-      token = reduce_completely(token, { expand: true , calc_completely:calcCompletelyBox.checked}, solutionNode)
+      token = reduce_completely(token, { expand: true, calc_completely: calcCompletelyBox.checked }, solutionNode)
       finalSolutions.push(token_to_text(token))
     } catch (err) {
       if (err.constructor == NegativeRootError) {
@@ -176,7 +177,7 @@ function substitute_recursively(_subst_solutions_list, subst_solutions_list, sol
       finalSolution = reduce_completely(finalSolution, { calc_completely: calcCompletelyBox.checked, expand: true })
       finalSolution = token_to_text(finalSolution)
       if (finalSolution != solution) {
-        return { val: solution, subnodes: [{val:finalSolution,subnodes:[]}] }
+        return { val: solution, subnodes: [{ val: finalSolution, subnodes: [] }] }
       } else {
         return { val: solution, subnodes: [] }
       }
@@ -219,8 +220,8 @@ function subst_tree_arr(subst_tree, solution_path = "") {
   if (solution) {
     solution_path += " = " + token_to_latex(parse(solution))
   }
-  if(!subst_tree.subnodes){
-    console.log("subst_tree",subst_tree)
+  if (!subst_tree.subnodes) {
+    console.log("subst_tree", subst_tree)
   }
   if (subst_tree.subnodes.length == 0) {
     if (subst_tree.isError) {
@@ -335,9 +336,42 @@ function trySolvingTactics(part1, part2, searched, historyNode = null) {
     }
   }
   childNode.innerHTML = ""//deleting isolation history if isolation isn't used
+  result = satz_v_Nullp(part1, part2, searched, childNode)
+  if (result.length > 0) {
+    return result
+  }else{
+    console.log("test",result)
+  }
   result = mitternachtsformel(part1, part2, searched, childNode)
   if (result.length > 0) {
     return result
+  }
+
+  return []
+}
+function satz_v_Nullp(part1, part2, searched, historyNode) {
+  let expression = all_one_side(part1, part2).newPart1
+  try {
+    expression = reduce_completely(expression, { linearfactor: true, simplify: true })
+  } catch (err) {
+    if (err.constructor == NegativeRootError) {
+      console.log("negative root error while expanding expression")
+      return []
+    } else {
+      throw err
+    }
+  }
+  console.log("expression:",token_to_text(expression))
+  if (expression.name == "punkt") {
+    let solutions = []
+    for (let subnode of expression.content) {
+      try {
+        solutions = solutions.concat(solve_equation(subnode, parse("0"), searched,[],historyNode))
+      } catch (err) {
+        console.log(err)
+      }
+    }
+    return solutions
   }
   return []
 }
@@ -476,7 +510,7 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
         historyBlock.className = "historyBlock"
         let currEqBlock = document.createElement("span")
         currEqBlock.innerHTML = `${token_to_latex(varPart)} = ${token_to_latex(otherPart)}`
-        console.log("currEqBlock", currEqBlock.innerHTML)
+        //console.log("currEqBlock", currEqBlock.innerHTML)
         //historyBlock.innerHTML=`${token_to_latex(varPart)} = ${token_to_latex(otherPart)} | ${step.action}`
         MQ.StaticMath(currEqBlock)
         historyBlock.appendChild(currEqBlock)

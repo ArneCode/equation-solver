@@ -82,22 +82,19 @@ function doAction(newVal, modes) {
   if (ptIndex == -1) {
     return true
   } else {
-    let nAfterComma = (newVal.length - ptIndex)-1
+    let nAfterComma = (newVal.length - ptIndex) - 1
     if (nAfterComma >= Number(calcCompletelyStop.value)) {
-      console.log("bsgnaf",{calcCompletelyStop:Number(calcCompletelyStop.value),nAfterComma,newVal})
       return false
-    }else{
-      console.log("abngsdfsdaf",{calcCompletelyStop:Number(calcCompletelyStop.value),nAfterComma,newVal})
     }
   }
   return true
 }
-function tryForm(testText,modes,already_reduced,level){
-  let testToken=parse(testText)
-  testToken=remove_unnessesary_brackets(testToken,level)
-  testText=token_to_text(testToken)
-  testToken=reduce_token(testToken,modes,already_reduced,level)
-  if(token_to_text(testToken)!=testText){
+function tryForm(testText, modes, already_reduced, level) {
+  let testToken = parse(testText)
+  testToken = remove_unnessesary_brackets(testToken, level)
+  testText = token_to_text(testToken)
+  testToken = reduce_token(testToken, modes, already_reduced, level)
+  if (token_to_text(testToken) != testText) {
     return testToken
   }
   return null
@@ -139,8 +136,8 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
         let gContent = val0.content
         if (gContent.name == "punkt") {
           let testText = "(" + gContent.content.map(t => "(" + token_to_text(t) + ")" + "^" + token_to_text(val1)).join("*") + ")"
-          let testToken=tryForm(testText,modes,already_reduced,level)
-          if(testToken){
+          let testToken = tryForm(testText, modes, already_reduced, level)
+          if (testToken) {
             return testToken
           }
         } else if (gContent.name == "div") {
@@ -203,6 +200,9 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
       }
       if (val1.val == 0) {
         throw new ZeroDivisionError()
+      }
+      if (val0.val == 0) {
+        return parse("0")
       }
       let info0 = getInfo(val0)
       let info1 = getInfo(val1)
@@ -348,10 +348,27 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
       return token.content[0]
     }
     if (token.name == "plus") {
+      /*console.log("tessssssss1",token_to_text(token),JSON.stringify(token))
+      if(token_to_text(token).includes("-0.3333333333333333+(-0.16666666666666666)")){
+        console.log("abc",token)
+        alert("test")
+      }
+      console.log(token)*/
       token.content = token.content.filter(elt => elt.val != 0)
       token.content.eachWeach(function (elt1, elt2, loop_info) {
         let info1 = getInfo(elt1)
         let info2 = getInfo(elt2)
+        if (elt1.type == "group") {
+          //console.log("aflksdj")
+          if (["number", "sign"].includes(elt1.content.type)) {
+            info1 = getInfo(elt1.content)
+          }
+        }
+        if (elt2.type == "group") {
+          if (elt2.content.type == "number") {
+            info1 = getInfo(elt2.content)
+          }
+        }
         if (info1.kind == info2.kind) {
           let newVal = info1.factor + info2.factor
           let newText = newVal + (info1.kind ? ("*" + info1.kind) : "")
@@ -566,7 +583,10 @@ function getInfo(token) {
       kind: ""
     }
   } else if (token.type == "sign") {
-    return { factor: -1, kind: token_to_text(token.val) }
+    if (token.text == "-") {
+      let valInfo = getInfo(token.val)
+      return { factor: -1*valInfo.factor, kind: valInfo.kind }
+    }
   }
   return { factor: 1, kindObj: token, kind: token_to_text(token) }
 }

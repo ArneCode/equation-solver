@@ -66,7 +66,6 @@ function handleEquationSubmit(event = null) {
   solutionsContainer.innerHTML = ""
   for (let solution of solutions) {
     solution = token_to_latex(parse(solution))
-    console.log("latex solution", solution)
     let solutionBlock = document.createElement("span")
     solutionBlock.classList.add("solutionBlock")
     solutionBlock.innerHTML = searched + " = " + solution

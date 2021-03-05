@@ -33,7 +33,7 @@ function tokenize(text) {
   let index = 0
   let curr_token = ""
   while (index < text.length) {
-    if ((NUM + "-").includes(text[index])) {
+    if ((NUM).includes(text[index])) {
       let numrx = RegExp(/^(\+|-)?\d+(\.\d+)?([eE](\+|-)?\d+)?/)
       //alert("substr: "+text.substr(index)+"\nindex: "+index)
       //numrx.exec(text.substr(index))
@@ -52,15 +52,23 @@ function tokenize(text) {
           })
           index += numlength
         }
-      } else {
+      } /*else {
         tokens.push({
           text: "-",
           type: "sign",
           factor: 1
         })
         index++
-      }
-    } else if (ALPHA.includes(text[index])) {
+      }*/
+    }else if(text[index]=="-"){
+      tokens.push({
+          text: "-",
+          type: "sign",
+          factor: 1
+        })
+        index++
+    } 
+    else if (ALPHA.includes(text[index])) {
       curr_token = text[index]
       while (index < text.length) {
         index++
