@@ -1,4 +1,4 @@
-function solve_equation(part1, part2, searched, otherEquations, historyNode = null, subst_info = {}) {
+function solve_equation(part1, part2, searched, otherEquations, historyNode = null, subst_info = {}, level=1) {
   let { doSubst } = getPropertys(subst_info, ["doSubst"], [true])
   let history = []
   let thisNode = document.createElement("div")
@@ -17,7 +17,6 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
     throw new InformationError(`there wasn't enough information given to find variable ${searched}`)
   }
   let solutions = trySolvingTactics(part1, part2, searched, childNode)
-  console.log("solutions 1",solutions)
   for (let i = 0; i < solutions.length; i++) {
     let solution = solutions[i]
     if (solution.includes("±")) {
@@ -36,7 +35,8 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
     childNode.appendChild(solutionNode)
     try {
       let token = parse(solution)
-      token = reduce_completely(token, { expand: true, calc_completely: calcCompletelyBox.checked }, solutionNode)
+      token = reduce_completely(token, { simplify:true, expand: true, calc_completely: calcCompletelyBox.checked&&level==0 }, solutionNode)
+      console.log("testststtststts",solution,token_to_text(token))
       finalSolutions.push(token_to_text(token))
     } catch (err) {
       if (err.constructor == NegativeRootError) {
@@ -64,6 +64,7 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
       }
     }
   }
+  console.log({solutions,finalSolutions})
   return solutions
 }
 function subst_incomp(part1, part2, historyNode, subst_info) {
@@ -339,8 +340,6 @@ function trySolvingTactics(part1, part2, searched, historyNode = null) {
   result = satz_v_Nullp(part1, part2, searched, childNode)
   if (result.length > 0) {
     return result
-  }else{
-    console.log("test",result)
   }
   result = mitternachtsformel(part1, part2, searched, childNode)
   if (result.length > 0) {
@@ -509,12 +508,18 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
         let historyBlock = document.createElement("span")
         historyBlock.className = "historyBlock"
         let currEqBlock = document.createElement("span")
-        currEqBlock.innerHTML = `${token_to_latex(varPart)} = ${token_to_latex(otherPart)}`
+        currEqBlock.innerHTML = `${token_to_latex(varPart)} = ${token_to_latex(otherPart)}  | ${step.prefix}...${step.action}`
         //console.log("currEqBlock", currEqBlock.innerHTML)
         //historyBlock.innerHTML=`${token_to_latex(varPart)} = ${token_to_latex(otherPart)} | ${step.action}`
         MQ.StaticMath(currEqBlock)
         historyBlock.appendChild(currEqBlock)
-        historyBlock.innerHTML += " | " + step.action
+        /*let actionBlock=document.createElement("span")
+        actionBlock.innerHTML=step.prefix+"..."+step.action
+        actionBlock.style.display="inline"
+        MQ.StaticMath(actionBlock)
+        console.log(actionBlock)
+        historyBlock.innerHTML += " | "
+        historyBlock.appendChild(actionBlock)*/
         childNode.appendChild(historyBlock)
         //childNode.innerHTML += cleanSigns(`<span class="historyBlock">${token_to_latex(varPart)} = ${token_to_latex(otherPart)} | ${step.action}</span>`)
         try {
@@ -574,15 +579,15 @@ function isolate_var_step(equation, searched) {
     switch (equation.name) {
       case "pow": {
         if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
-          let prefix = ""
+          let sign = ""
           if (val1.val % 2 == 0) {
-            prefix = "±"
+            sign = "±"
           }
           return {
             state: "isolating",
-            action: "^(1/" + token_to_text(val1) + ")",
+            action: "}",
             equation: val0,
-            prefix
+            prefix:sign+"\\sqrt["+token_to_text(val1)+"]{"
           }
         }
         else if (val1.variables.includes(searched) && !val0.variables.includes(searched)) {

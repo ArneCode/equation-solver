@@ -1,9 +1,9 @@
-function indexWhereOpLevel(tokens, level) {
+function indexWhereOpLevel(tokens, level,name) {
   //gives back indexes of tokens whose level==level given as parameter
   let indexes = []
   for (let i in tokens) {
     if (tokens[i].type == "op") {
-      if (tokens[i].level == level) {
+      if (tokens[i].level == level/*&&(name?name==tokens[i].name:true)*/) {
         indexes.push(Number(i))
       }
     }
@@ -13,8 +13,8 @@ function indexWhereOpLevel(tokens, level) {
 function tokenPosVal(token) {
   if (token.type == "number") {
     return 0
-  }else if(token.type=="unit"){
-    return 10000+Math.abs(token.text.hashCode())
+  } else if (token.type == "unit") {
+    return 10000 + Math.abs(token.text.hashCode())
   }
   return Math.abs(token_to_text(token).hashCode())
 }
@@ -48,8 +48,8 @@ function indexWhereType(tokens, type) {
   }
   return indexes
 }
-function handleSyntaxOp(tokens, level, name, doChain = false, reversed = false) {
-  let tokenIndexes = indexWhereOpLevel(tokens, level)
+function handleSyntaxOp(tokens, level, name, doChain = false) {
+  let tokenIndexes = indexWhereOpLevel(tokens, level,name)
   let indexOff = 0
   let opChain = []
   for (let indexI = 0; indexI < tokenIndexes.length; indexI++) {
@@ -196,16 +196,40 @@ function createSyntaxTree(tokens, level = 4) {
   if (level == 1) {
     handleOpReversed(tokens, 2, "div")
   }
+  for(let i=0;i<tokens.length;i++){
+    if(tokens[i].type=="root"){
+        console.log("test")
+        let token=tokens[i]
+        let exp=parse(`1/(${token.exp})`)
+        let rootExp=parse(token.exp)
+        let val0=parse(token.radik)
+        tokens[i]={
+          type:"op",
+          val0,
+          val1:exp,
+          isRootForm:true,
+          rootExp,
+          name:"pow",
+          operand:"^"
+        }
+      }
+  }
   if (level == -1) {
     for (let i = 0; i < tokens.length; i++) {
       if (tokens[i].type == "sign") {
         let nextToken = tokens[i + 1]
         if (nextToken) {
-          tokens.splice(i, 2, {
-            text: tokens[i].text,
-            val: nextToken,
-            type: "sign"
-          })
+          if (nextToken.type == "number" && tokens[i].text == "-") {
+            nextToken.val *= -1
+            nextToken.text = "-" + nextToken.text
+            tokens.splice(i, 2, nextToken)
+          } else {
+            tokens.splice(i, 2, {
+              text: tokens[i].text,
+              val: nextToken,
+              type: "sign"
+            })
+          }
         } else {
           throw new Error("Expected token after sign, but got nothing")
         }
@@ -234,13 +258,13 @@ function createSyntaxTree(tokens, level = 4) {
   //alert("test")
 }
 function parse(text) {
-  if(text.includes("(a)*(c)")){
-    console.log(new Error("errrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"+text))
-  }
   text = cleanSigns(text)
   let tokens = tokenize(text)
-  let Tree = createSyntaxTree(tokens)[0]
-  return Tree
+  let TreeL = createSyntaxTree(tokens)
+  if(TreeL.length!=1){
+    throw new Error("Error after treeifying tokens. TreeL is suppost to be only one node, but is"+TreeL.length+"long")
+  }
+  return TreeL[0]
 }
 function parse_equation(text) {
   if (!text.includes("=")) {

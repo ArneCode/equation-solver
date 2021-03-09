@@ -103,7 +103,8 @@ window.onload = () => {
       enter: function () {
         handleEquationSubmit()
       }
-    }
+    },
+    charsThatBreakOutOfSupSub: '+-=<>'
   })
   equationMathField.latex(window.sessionStorage.getItem("mainEquationLatex") || "")
   switch (window.sessionStorage.getItem("currPage")) {

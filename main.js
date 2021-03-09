@@ -52,6 +52,7 @@ function handleEquationSubmit(event = null) {
     console.error("error while parsing equation. Err:\n", err)
     return
   }
+  console.log({part1,part2})
   let searched = searchVarInput.value
   let otherEquations = getEquations().concat(getKnownEquations())
   //console.log("otherEquations",otherEquations)
@@ -61,10 +62,11 @@ function handleEquationSubmit(event = null) {
   solutionPathElt.appendChild(childElement)
   historyContainer.innerHTML = ""
   historyContainer.appendChild(solutionPathElt)
-  let solutions = solve_equation(part1, part2, searched, otherEquations, childElement, {}, [])
+  let solutions = solve_equation(part1, part2, searched, otherEquations, childElement, {}, 0)
   //let solutionsHTML=""
   solutionsContainer.innerHTML = ""
   for (let solution of solutions) {
+    console.log("solution 11111111",solution)
     solution = token_to_latex(parse(solution))
     let solutionBlock = document.createElement("span")
     solutionBlock.classList.add("solutionBlock")

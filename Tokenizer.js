@@ -52,22 +52,65 @@ function tokenize(text) {
           })
           index += numlength
         }
-      } /*else {
+      }
+    } else if ("[".includes(text[index])) {
+      let unitName = ""
+      let endFound = false
+      index++
+      for (index; index < text.length; index++) {
+        if (text[index] == "]") {
+          endFound = true
+          index++
+          break
+        } else {
+          unitName += text[index]
+        }
+      }
+      if (endFound) {
+        if (RegExp(/^[a-z]+$/i).test(unitName)) {
+          tokens.push({
+            text: "[" + unitName + "]",
+            type: "unit",
+            factor: 1,
+            name: unitName
+          })
+        }
+      } else {
+        throw new Error("unmatching square Brackets")
+      }
+    } else if (text[index] == "\\") {
+      let restString = text.substr(index + 1)
+      if (restString.startsWith("sqrt")) {
+        restString = restString.substr(4).trim()
+        let exp = "2"
+        if (restString[0] == "[") {
+          let expEnd = restString.searchForCorres("[", "]")
+          exp = restString.substring(1, expEnd)
+          restString = restString.substr(expEnd + 1).trim()
+        }
+        if (restString[0] != "{") {
+          throw new Error("Expression hasn't been defined right, expression: ", text)
+        }
+        let radikEnd = restString.searchForCorres("{", "}")
+        let radik = restString.substring(1, radikEnd)
+        restString = restString.substr(radikEnd + 1).trim()
         tokens.push({
-          text: "-",
-          type: "sign",
-          factor: 1
+          text: "\\sqrt",
+          type: "root",
+          radik,
+          exp
         })
-        index++
-      }*/
-    }else if(text[index]=="-"){
+        index = text.length - restString.length
+      }
+    }
+    else if (text[index] == "-") {
       tokens.push({
-          text: "-",
-          type: "sign",
-          factor: 1
-        })
-        index++
-    } 
+        text: "-",
+        type: "sign",
+        factor: 1
+      })
+      index++
+    }
     else if (ALPHA.includes(text[index])) {
       curr_token = text[index]
       while (index < text.length) {
@@ -118,33 +161,6 @@ function tokenize(text) {
         factor: 1
       });
       index++;
-    } else if ("[".includes(text[index])) {
-      let unitName = ""
-      let endFound = false
-      index++
-      for (index; index < text.length; index++) {
-        if (text[index] == "]") {
-          endFound = true
-          index++
-          break
-        } else {
-          unitName += text[index]
-        }
-      }
-      if (endFound) {
-        if (RegExp(/^[a-z]+$/i).test(unitName)) {
-          tokens.push({
-            text: "[" + unitName + "]",
-            type: "unit",
-            factor: 1,
-            name: unitName
-          })
-        } else {
-          throw new Error(unitName + " is not a valid unit name")
-        }
-      } else {
-        throw new Error("unmatching square Brackets")
-      }
     }
     else if (text[index] == "±") {
       tokens.push({
@@ -182,7 +198,7 @@ function latex_to_text(latex) {
     text = text.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, "($1)/($2)")
     text = text.replace(/\\(left|right)([\[\]()])/g, "$2")
     text = text.replace(/\\cdot/g, "*")
-    text=text.replace(/\^\{([^{}]*)\}/g,"^($1)")
+    text = text.replace(/\^\{([^{}]*)\}/g, "^($1)")
   }
   return text
 }
@@ -197,37 +213,39 @@ function token_to_latex(token, gReturn = false) {
     text += subTexts.join(token.operand)
   } else if (token.type == "op") {
     if (token.name == "div") {
-      let text0 = token_to_latex(token.val0,true)
-      let text1 = token_to_latex(token.val1,true)
+      let text0 = token_to_latex(token.val0, true)
+      let text1 = token_to_latex(token.val1, true)
       text += `\\frac{${text0}}{${text1}}`
     } else if (token.name == "pow") {
       let text0 = token_to_latex(token.val0)
-      let text1 = token_to_latex(token.val1,true)
-      text += text0 + "^{"+text1+"}"
+      let text1 = token_to_latex(token.val1, true)
+      text += text0 + "^{" + text1 + "}"
+    } else {
+      text += token_to_text(token)
     }
   } else if (token.type == "group") {
-    let cText = token_to_latex(token.content,true)
-    if(gReturn){
+    let cText = token_to_latex(token.content, true)
+    if (gReturn) {
       return cText
     }
     text += "\\left(" + cText + "\\right)"
-  } else if (["word", "unit","number"].includes(token.type)) {
+  } else if (["word", "unit", "number"].includes(token.type)) {
     text += token_to_text(token)
   } else if (token.type == "sign") {
     text += token.text + token_to_latex(token.val)
   }
   return text_to_latex(text)
 }
-function text_to_latex(text){
-  let before=""
-  while(before!=text){
-    before=text
-    text=text.replace(" \\pm ","±")
-    text=text.replace(/\*/g," \\cdot ")
-    text=text.replace(/((\\left)?)\(/g,"\\left(")
-    text=text.replace(/((\\left)?)\[/g,"\\left[")
-    text=text.replace(/((\\right)?)\)/g,"\\right)")
-    text=text.replace(/((\\right)?)\]/g,"\\right]")
+function text_to_latex(text) {
+  let before = ""
+  while (before != text) {
+    before = text
+    text = text.replace(" \\pm ", "±")
+    text = text.replace(/\*/g, " \\cdot ")
+    text = text.replace(/((\\left)?)\(/g, "\\left(")
+    text = text.replace(/((\\left)?)\[/g, "\\left[")
+    text = text.replace(/((\\right)?)\)/g, "\\right)")
+    text = text.replace(/((\\right)?)\]/g, "\\right]")
   }
   return text
 }

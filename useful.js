@@ -199,3 +199,20 @@ function getPropertys(obj,names,alternative){
   }
   return result
 }
+  String.prototype.searchForCorres=function(open, close, start = 0) {
+    let index = start
+    let level = 0
+    let corres = -1
+    while (corres < 0 && index < this.length) {
+      if (this[index] == open) {
+        level++
+      } else if (this[index] == close) {
+        level--
+        if (level == 0) {
+          return index
+        }
+      }
+      index++
+    }
+    return corres
+  }
