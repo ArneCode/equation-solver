@@ -27,11 +27,7 @@ function groupWother(a, b, params, already_reduced = [], level = 0) {
   } else {
     return null
   }
-
   let gContent = group.content
-  /* if (gContent.name == "div" && operandObj.name == "div"||(gContent.name == "punkt" && operandObj.name == "div")) {
-     return null
-   }*/
   let otherText = token_to_text(other)
   if ((gContent.level >= operandObj.level || (gContent.name == "punkt" && operandObj.name == "div")) && !(gContent.name == "div" && operandObj.name == "div")) {
     let newText
@@ -83,7 +79,6 @@ function doAction(newVal, modes) {
   } else {
     let nAfterComma = (newVal.length - ptIndex) - 1
     if (nAfterComma >= Number(calcCompletelyStop.value)) {
-      console.log(false)
       return false
     }
   }
@@ -133,9 +128,16 @@ function getSubTokens(token){
   }
   return subTokens
 }
+function getSubTypes(token){
+  let types=[]
+  for(let subToken of getSubTokens(token)){
+    types.push(subToken)
+  }
+  return types
+}
 function reduce_token(token, modes = { simplify: "true" }, already_reduced = [], level = 0) {
   //modes:
-  //simplify, expand, calc_completely
+  //simplify, expand, calc_completely, compact, disperse
   if (token_to_text(token).includes("Infinity")) {
     throw new Error("Infinity")
   }
@@ -161,7 +163,7 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           return newToken
         }
       }else{
-        let rootExp=parse(`1/(${token.val1})`)
+        let rootExp=parse(`1/(${token_to_text(token.val1)})`)
         rootExp=reduce_token(rootExp,modes,already_reduced,level)
         if(getTokenComplexity(rootExp)<getTokenComplexity(token.val1)){
           let newText=``
@@ -213,7 +215,6 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           } else {
             return token
           }
-
         }
         else if (val1.val == 1) {
           return val0
@@ -271,7 +272,6 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
         let testToken = parse(testText)
         testToken = reduce_token(testToken, modes, already_reduced, level)
         if (token_to_text(testToken) != testText) {
-          console.log(testText, token_to_text(testToken))
           return testToken
         } else {
           testText = `(${token_to_text(val0)}/${token_to_text(val1.val0)})*${token_to_text(val1.val1)}`
@@ -282,7 +282,6 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           }
         }
       }
-      //throw
       if (val0.type == "group" && val1.type == "group") {
         let gInfo0 = getInfo(val0.content)
         let gInfo1 = getInfo(val1.content)
@@ -387,30 +386,23 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
       return token.content[0]
     }
     if (token.name == "plus") {
-      /*console.log("tessssssss1",token_to_text(token),JSON.stringify(token))
-      if(token_to_text(token).includes("-0.3333333333333333+(-0.16666666666666666)")){
-        console.log("abc",token)
-        alert("test")
-      }
-      console.log(token)*/
       token.content = token.content.filter(elt => elt.val != 0)
       token.content.eachWeach(function (elt1, elt2, loop_info) {
         let info1 = getInfo(elt1)
         let info2 = getInfo(elt2)
         if (elt1.type == "group") {
-          //console.log("aflksdj")
           if (["number", "sign"].includes(elt1.content.type)) {
             info1 = getInfo(elt1.content)
           }
         }
         if (elt2.type == "group") {
-          if (elt2.content.type == "number") {
+          if (["number","sign"].includes(elt2.content.type)) {
             info1 = getInfo(elt2.content)
           }
         }
         if (info1.kind == info2.kind) {
-          let newVal = info1.factor + info2.factor
-          let newText = newVal + (info1.kind ? ("*" + info1.kind) : "")
+          let newVal = ((info1.factorText||info1.factor)+((info1.factorText||info2.factorText)?"+":0)+(info2.factorText||info2.factor))
+          let newText = "("+newVal+")" + (info1.kind ? ("*" + info1.kind) : "")
           let { list, i1, i2, restart_loop } = loop_info
           list.splice(i2, 1)
           restart_loop()
@@ -437,14 +429,12 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
             let newExpText = `(${token_to_text(elt1.val1)}+${token_to_text(elt2.val1)})`
             let newExp = parse(newExpText)
             newExp = reduce_token(newExp, modes, already_reduced, level)
-            console.log("pow pow before",token_to_text(token),clone_entirely({elt1,elt2,token}))
             elt1.val1 = newExp
             if(elt1.isRootForm){
               let rootExp=parse("1/"+newExpText)
               rootExp=reduce_token(rootExp,modes,already_reduced,level)
               elt1.rootExp=rootExp
             }
-            console.log("pow pow after",token_to_text(token),clone_entirely({elt1,elt2,token}),token_to_text(elt1))
             list.splice(i2, 1)
             return restart_loop()
           }
@@ -473,7 +463,7 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
         if (info1.kind == info2.kind) {
           if (info1.kind == "") {
             let newVal = info1.factor * info2.factor
-            list[i1] = tokenize(String(newVal))[0]
+            list[i1] = parse(String(newVal))
             list.splice(i2, 1)
             return restart_loop()
           } else {
@@ -631,12 +621,35 @@ function getInfo(token) {
   } else if (token.type == "sign") {
     if (token.text == "-") {
       let valInfo = getInfo(token.val)
-      return { factor: -1 * valInfo.factor, kind: valInfo.kind }
+      let info={ factor: -1 * valInfo.factor, kind: valInfo.kind}
+      if(valInfo.factorText){
+        info.factorText="-"+valInfo.factorText
+      }
+      return info
+    }
+  }else if(token.type=="op"){
+    let val0=token.val0
+    let val1=token.val1
+    if(token.name=="div"){
+      if(["number"].includes(val0.type)){
+        return {factor:val0.val,kind: "1/"+getInfo(val1).kind}
+      }else if(val1.type=="number"){
+        let factor=1/val1.val
+        let info={factor:factor,kind:getInfo(val0).kind}
+        if(!doAction(factor,{})){
+          let factorText="1/"+val1.val
+          if(factorText.length<String(factor).length){
+            info.factorText=factorText
+          }
+        }
+        return info
+      }
     }
   }
   return { factor: 1, kindObj: token, kind: token_to_text(token) }
 }
 function token_to_text(token) {
+  try{
   if (token.type.isOf(["number", "word"])) {
     return token.text
   } else if (token.type == "op") {
@@ -666,6 +679,10 @@ function token_to_text(token) {
   else {
     return token.text
   }
+}catch(err){
+  console.log("token_to_text error",token)
+  throw err
+}
 }
 class NegativeRootError extends Error {
   constructor(message, rootContent, exponent) {
@@ -689,7 +706,9 @@ function reduce_completely(token, modes = { simplify: true }, historyNode = null
   let before = []
   let beforeText = token_to_text(token)
   let result = reduce_token(token, modes)
-  let resultText = token_to_text(result)
+  let resultAfter=clone_entirely(result)
+  let resultText
+    resultText = token_to_text(result)
   while (!before.includes(resultText)) {
     before.push(resultText)
     result = reduce_token(parse(resultText), modes)

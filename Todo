@@ -2,3 +2,6 @@ add solving by substitution
 add decimal.js from https://github.com/MikeMcl/decimal.js/
 expand on units/add settings
 add better reduce_token modes
+(-2)/(1+-1/3) should be reduced to -3, without expand mode
+1+1/3 should be reduced to 4/3
+bug: error when parsing "2*+1"

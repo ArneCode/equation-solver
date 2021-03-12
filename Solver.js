@@ -1,4 +1,4 @@
-function solve_equation(part1, part2, searched, otherEquations, historyNode = null, subst_info = {}, level=1) {
+function solve_equation(part1, part2, searched, otherEquations, historyNode = null, subst_info = {}, level = 1) {
   let { doSubst } = getPropertys(subst_info, ["doSubst"], [true])
   let history = []
   let thisNode = document.createElement("div")
@@ -35,8 +35,7 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
     childNode.appendChild(solutionNode)
     try {
       let token = parse(solution)
-      token = reduce_completely(token, { simplify:true, expand: true, calc_completely: calcCompletelyBox.checked&&level==0 }, solutionNode)
-      console.log("testststtststts",solution,token_to_text(token))
+      token = reduce_completely(token, { simplify: true, expand: true, calc_completely: calcCompletelyBox.checked && level == 0 }, solutionNode)
       finalSolutions.push(token_to_text(token))
     } catch (err) {
       if (err.constructor == NegativeRootError) {
@@ -64,7 +63,6 @@ function solve_equation(part1, part2, searched, otherEquations, historyNode = nu
       }
     }
   }
-  console.log({solutions,finalSolutions})
   return solutions
 }
 function subst_incomp(part1, part2, historyNode, subst_info) {
@@ -109,7 +107,6 @@ function subst_incomp(part1, part2, historyNode, subst_info) {
       if (part1Text.includes(var_name) || part2Text.includes(var_name)) {
         delete vars_to_replace[var_name]
       }
-      //part1Text = part1Text.split(var_name).join(solution)
       part1Text = replaceVar(part1Text, var_name, solution)
       part2Text = replaceVar(part2Text, var_name, solution)
       childNode.innerHTML += "<br/>"
@@ -162,7 +159,6 @@ function subst_comp(solutions, searched, historyNode, subst_info) {
     let pathSpan = document.createElement("span")
     pathSpan.innerHTML = solution_path
     MQ.StaticMath(pathSpan)
-    //pathsNode.innerHTML += `<span>${cleanSigns(solution_path)}</span><br/>`
     pathsNode.appendChild(pathSpan)
   }
   childNode.innerHTML += "<br/>"
@@ -220,9 +216,6 @@ function subst_tree_arr(subst_tree, solution_path = "") {
   let solution = subst_tree.val
   if (solution) {
     solution_path += " = " + token_to_latex(parse(solution))
-  }
-  if (!subst_tree.subnodes) {
-    console.log("subst_tree", subst_tree)
   }
   if (subst_tree.subnodes.length == 0) {
     if (subst_tree.isError) {
@@ -330,6 +323,8 @@ function trySolvingTactics(part1, part2, searched, historyNode = null) {
     result = isolate_stepwise_completely(clone_entirely(part2), clone_entirely(part1), searched, childNode)
     newPart1 = result[0]
     newPart2 = result[1]
+  } else if (part1.variables.includes(searched) && part2.variables.includes(searched)) {
+    [newPart1, newPart2] = varOneSide(clone_entirely(part1), clone_entirely(part2), searched, childNode)
   }
   if (newPart1.text == searched) {
     if (!newPart2.variables.includes(searched)) {
@@ -345,8 +340,130 @@ function trySolvingTactics(part1, part2, searched, historyNode = null) {
   if (result.length > 0) {
     return result
   }
-
   return []
+}
+function getTokenFactors(token) {
+  let factors = []
+  if (token.type == "number") {
+    let factors = Math.abs(token.val).factors().map(String)
+    if (token.val < 0) {
+      factors.push("-1")
+    }
+  } else if (token.name == "plus") {
+    factors = getTokenFactors(token.content[0])
+    for (let subnode of token.content.slice(1)) {
+      factors = sharedElts(factors, getTokenFactors(subnode))
+    }
+    return factors
+  } else if (token.name == "punkt") {
+    for (let subnode of token.content) {
+      factors = factors.concat(getTokenFactors(subnode))
+    }
+  } else if (token.name == "pow") {
+    if (token.val1.type == "number" && token.val1.val >= 1) {
+      for (let exp = Math.floor(token.val1.val); exp > 1; exp--) {
+        factors.push(token_to_text(token.val0) + "^" + exp)
+      }
+      factors.push(token_to_text(remove_unnessesary_brackets(token.val0)))
+      return factors
+    } else {
+      return [token_to_text(remove_unnessesary_brackets(token.val0)), token_to_text(token)]
+    }
+  }
+  else {
+    return [token_to_text(token)]
+  }
+  return factors
+}
+function removeEquationFactors(part1, part2, historyNode = null) {
+  let factors = sharedElts(getTokenFactors(part1), getTokenFactors(part2))
+  while (factors.length > 0) {
+    let factor = factors[0]
+    let part1Text = `(${token_to_text(part1)})/${factor}`
+    let part2Text = `(${token_to_text(part2)})/${factor}`
+    if (historyNode) {
+      let equationNode = document.createElement("div")
+      equationNode.className = "historyBlock"
+      equationNode.innerHTML = `${token_to_latex(part1)}=${token_to_latex(part2)}|\\frac{\\dots}{${factor}}`
+      MQ.StaticMath(equationNode)
+      historyNode.appendChild(equationNode)
+    }
+    part1 = parse(part1Text)
+    part1 = reduce_completely(part1, { simplify: true, expand: true })
+    part2 = parse(part2Text)
+    part2 = reduce_completely(part2, { simplify: true, expand: true })
+    factors = sharedElts(getTokenFactors(part1), getTokenFactors(part2))
+  }
+  return [part1, part2]
+}
+function varOneSide(part1, part2, searched, historyNode) {
+  let solutions = []
+  let thisNode = document.createElement("div")
+  historyNode.appendChild(thisNode)
+  for (let first = 1; first < 3; first++) {
+    let a, b
+    if (first == 1) {
+      a = clone_entirely(part1)
+      b = clone_entirely(part2)
+    } else {
+      a = clone_entirely(part2)
+      b = clone_entirely(part1)
+    }
+    let orderReversed = first == 2
+    let aBefore, bBefore, result
+    let isolationNode = document.createElement("div")
+    while (aBefore != token_to_text(a) || bBefore != token_to_text(b)) {
+      aBefore = token_to_text(a)
+      bBefore = token_to_text(b)
+      result = removeEquationFactors(a, b, isolationNode)
+      a = result[0]
+      b = result[1]
+      result = isolate_stepwise_completely(a, b, searched, isolationNode, true, orderReversed)
+      a = result[0]
+      b = result[1]
+      result = isolate_stepwise_completely(b, a, searched, isolationNode, false, !orderReversed)
+      a = result[1]
+      b = result[0]
+    }
+    if (orderReversed) {
+      solutions.push({
+        varPart: b,
+        otherPart: a,
+        history: isolationNode
+      })
+    } else {
+      solutions.push({
+        varPart: a,
+        otherPart: b,
+        history: isolationNode
+      })
+    }
+  }
+  //choosing best solution
+  let bestSolution
+  let minComplexity = Infinity
+  for (let solution of solutions) {
+    let { varPart, otherPart } = solution
+    if (otherPart.variables.includes(searched) || varPart.type != "word") {
+      continue
+    }
+    let complexity = getTokenComplexity(otherPart)
+    if (complexity < minComplexity) {
+      minComplexity = complexity
+      bestSolution = solution
+    }
+  }
+  if (bestSolution) {
+    thisNode.appendChild(bestSolution.history)
+    let finalEquationNode = document.createElement("div")
+    finalEquationNode.className = "historyBlock"
+    finalEquationNode.innerHTML = token_to_latex(bestSolution.varPart) + "=" + token_to_latex(bestSolution.otherPart)
+    MQ.StaticMath(finalEquationNode)
+    thisNode.appendChild(finalEquationNode)
+    return [bestSolution.varPart, bestSolution.otherPart]
+  } else {
+    return [part1, part2]
+  }
 }
 function satz_v_Nullp(part1, part2, searched, historyNode) {
   let expression = all_one_side(part1, part2).newPart1
@@ -360,15 +477,10 @@ function satz_v_Nullp(part1, part2, searched, historyNode) {
       throw err
     }
   }
-  console.log("expression:",token_to_text(expression))
   if (expression.name == "punkt") {
     let solutions = []
     for (let subnode of expression.content) {
-      try {
-        solutions = solutions.concat(solve_equation(subnode, parse("0"), searched,[],historyNode))
-      } catch (err) {
-        console.log(err)
-      }
+      solutions = solutions.concat(solve_equation(subnode, parse("0"), searched, [], historyNode))
     }
     return solutions
   }
@@ -474,7 +586,7 @@ function all_one_side(part1, part2, historyNode = null) {
   let newPart1Text = "(" + token_to_text(part1) + ")-(" + token_to_text(part2) + ")"
   let newPart1 = parse(newPart1Text)
   let newPart2 = parse("0")
-  if (part2.val != 0) {
+  if (part2.val != 0 && historyNode) {
     let thisNode = document.createElement("div")
     thisNode.innerHTML = `
     <h3>Putting everything on one Side</h3><br/>
@@ -483,24 +595,19 @@ function all_one_side(part1, part2, historyNode = null) {
   }
   return { newPart1, newPart2 }
 }
-function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) {
+function isolate_stepwise_completely(varPart, otherPart, searched, historyNode, varSearched = true, varPartFirst = true) {
   let thisNode = document.createElement("div")
-  //thisNode.innerHTML=`<h3>Isolating ${searched} by reforming the equations</h3>`
   historyNode.appendChild(thisNode)
   let childNode = document.createElement("div")
   thisNode.appendChild(childNode)
   let steps = []
   while (steps.length < 100) {
-    let step = isolate_var_step(varPart, searched)
+    let step = isolate_var_step(varPart, searched, varSearched)
     steps.push(step)
     switch (step.state) {
       case "finished": {
         let historyBlock = document.createElement("span")
         historyBlock.className = "historyBlock"
-        historyBlock.innerHTML = `${token_to_latex(varPart)}=${token_to_latex(otherPart)}`
-        MQ.StaticMath(historyBlock)
-        childNode.appendChild(historyBlock)
-        //childNode.innerHTML += `<span class="historyBlock"></span>`
         return [varPart, otherPart]
       }
       case "isolating": {
@@ -508,23 +615,17 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
         let historyBlock = document.createElement("span")
         historyBlock.className = "historyBlock"
         let currEqBlock = document.createElement("span")
-        currEqBlock.innerHTML = `${token_to_latex(varPart)} = ${token_to_latex(otherPart)}  | ${step.prefix}...${step.action}`
-        //console.log("currEqBlock", currEqBlock.innerHTML)
-        //historyBlock.innerHTML=`${token_to_latex(varPart)} = ${token_to_latex(otherPart)} | ${step.action}`
+        if (varPartFirst) {
+          currEqBlock.innerHTML = `${token_to_latex(varPart)} = ${token_to_latex(otherPart)}  | ${step.actionLatex}`
+        } else {
+          currEqBlock.innerHTML = `${token_to_latex(otherPart)} = ${token_to_latex(varPart)}  | ${step.actionLatex}`
+        }
         MQ.StaticMath(currEqBlock)
         historyBlock.appendChild(currEqBlock)
-        /*let actionBlock=document.createElement("span")
-        actionBlock.innerHTML=step.prefix+"..."+step.action
-        actionBlock.style.display="inline"
-        MQ.StaticMath(actionBlock)
-        console.log(actionBlock)
-        historyBlock.innerHTML += " | "
-        historyBlock.appendChild(actionBlock)*/
         childNode.appendChild(historyBlock)
-        //childNode.innerHTML += cleanSigns(`<span class="historyBlock">${token_to_latex(varPart)} = ${token_to_latex(otherPart)} | ${step.action}</span>`)
         try {
           otherPart = parse(newOtherPartText)
-          otherPart = reduce_completely(otherPart, { simplify: true }, document.createElement("div"))
+          otherPart = reduce_completely(otherPart, { simplify: true, expand: true, dispand: true }, document.createElement("div"))
           varPart = step.equation
           break;
         } catch (err) {
@@ -538,15 +639,27 @@ function isolate_stepwise_completely(varPart, otherPart, searched, historyNode) 
     }
   }
 }
-function isolate_var_step(equation, searched) {
+function isolate_var_step(equation, searched, varSearched = true) {
   equation = reduce_completely(equation, { simplify: true, expand: true })
-  if (equation.type == "word" && equation.text == searched) {
-    return { state: "finished" }
-  } else if (equation.type == "opChain") {
+  if (varSearched) {
+    if (equation.type == "word" && equation.text == searched) {
+      return { state: "finished" }
+    }
+  } else {
+    if (!equation.variables.includes(searched)) {
+      return { state: "finished" }
+    }
+  }
+  if (equation.type == "opChain") {
     let { content, name } = equation
     for (let i = 0; i < content.length; i++) {
       let subnode = content[i]
-      if (!subnode.variables.includes(searched)) {
+      let isSearched = subnode.variables.includes(searched)
+      if (!varSearched) {
+        isSearched = (!isSearched)
+      }
+      //^ = xor
+      if (!isSearched) {
         content.splice(i, 1)
         if (content.length == 1) {
           equation = content[0]
@@ -557,7 +670,8 @@ function isolate_var_step(equation, searched) {
               state: "isolating",
               action: "/" + token_to_text(subnode),
               equation,
-              prefix: ""
+              prefix: "",
+              actionLatex: "\\frac{...}{" + token_to_latex(subnode) + "}"
             }
             break;
           }
@@ -565,6 +679,7 @@ function isolate_var_step(equation, searched) {
             return {
               state: "isolating",
               action: "-" + token_to_text(subnode),
+              actionLatex: "-" + token_to_latex(subnode),
               equation,
               prefix: ""
             }
@@ -576,9 +691,22 @@ function isolate_var_step(equation, searched) {
   } else if (equation.type == "op") {
     let val0 = equation.val0
     let val1 = equation.val1
+    let isolate0
+    if (val0.variables.includes(searched)) {
+      if (!val1.variables.includes(searched)) {
+        isolate0 = true
+      } else {
+        return { state: "finished" }
+      }
+    } else if (val1.variables.includes(searched)) {
+      isolate0 = false
+    } else {
+      return { state: "finished" }
+    }
+    isolate0 = isolate0 ^ (!varSearched)
     switch (equation.name) {
       case "pow": {
-        if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
+        if (isolate0) {
           let sign = ""
           if (val1.val % 2 == 0) {
             sign = "±"
@@ -587,29 +715,32 @@ function isolate_var_step(equation, searched) {
             state: "isolating",
             action: "}",
             equation: val0,
-            prefix:sign+"\\sqrt["+token_to_text(val1)+"]{"
+            prefix: sign + "\\sqrt[" + token_to_text(val1) + "]{",
+            actionLatex: "\\sqrt[" + token_to_latex(val1) + "]{...}"
           }
         }
-        else if (val1.variables.includes(searched) && !val0.variables.includes(searched)) {
-          varPart = val1
-          otherPart = val0
+        else {
+          console.warn("reminder: add logarithm")
+          return { state: "finished" }
         }
         break;
       }
       case "div": {
-        if (val0.variables.includes(searched) && !val1.variables.includes(searched)) {
+        if (isolate0) {
           return {
             state: "isolating",
             action: "*" + token_to_text(val1),
+            actionLatex: "\\cdot" + token_to_latex(val1),
             equation: val0,
             prefix: ""
           }
           break;
-        } else if (val1.variables.includes(searched) && !val0.variables.includes(searched)) {
+        } else {
           equation = parse(token_to_text(val1) + "/" + token_to_text(val0))
           return {
             state: "isolating",
             action: "^-1",
+            actionLatex: "\\dots^{-1}",
             equation,
             prefix: ""
           }
@@ -618,7 +749,28 @@ function isolate_var_step(equation, searched) {
     }
   }
   else if (equation.type == "group") {
-    return isolate_var_step(equation.content, searched)
+    return isolate_var_step(equation.content, searched, varSearched)
+  } else if (equation.type == "sign") {
+    if (equation.text == "-") {
+      let isolate0 = !varSearched
+      if (isolate0) {
+        return {
+          state: "isolating",
+          action: "/" + token_to_text(equation.val),
+          actionLatex: "\\frac{\\dots}{" + token_to_latex(equation.val) + "}",
+          equation: parse("-1"),
+          prefix: ""
+        }
+      } else {
+        return {
+          state: "isolating",
+          action: "*-1",
+          actionLatex: "\\cdot-1",
+          equation: equation.val,
+          prefix: ""
+        }
+      }
+    }
   }
   else {
     return { state: "finished" }

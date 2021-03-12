@@ -48,7 +48,8 @@ function tokenize(text) {
             text: numText,
             val,
             type: "number",
-            factor: 1
+            factor: 1,
+            level:-1
           })
           index += numlength
         }
@@ -107,7 +108,8 @@ function tokenize(text) {
       tokens.push({
         text: "-",
         type: "sign",
-        factor: 1
+        factor: 1,
+        level:0
       })
       index++
     }
@@ -167,7 +169,8 @@ function tokenize(text) {
         text: "±",
         type: "sign",
         factor: 1,
-        name: "plusminus"
+        name: "plusminus",
+        level:0
       })
       index++
     }

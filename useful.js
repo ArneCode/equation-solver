@@ -216,3 +216,49 @@ function getPropertys(obj,names,alternative){
     }
     return corres
   }
+  let knownPrimes=[2]
+function primesBelow(max){
+    let currTest=knownPrimes[knownPrimes.length-1]
+  while(currTest<max){
+    currTest++
+    let isP=true
+    for(let p of knownPrimes){
+      if(currTest%p==0){
+        isP=false
+        break;
+      }
+    }
+    if(isP){
+      knownPrimes.push(currTest)
+    }
+  }
+  return knownPrimes
+}
+Number.prototype.primeFactors=function(){
+  let factors=[]
+  for(let p of primesBelow(this/2)){
+    if(p>this/2){
+      break;
+    }
+    if(this%p==0){
+      factors.push(p)
+    }
+  }
+  return factors
+}
+Number.prototype.factors=function(){
+  let factors=[]
+  for(let n=2;n<=this/2;n++){
+    if(this%n==0){
+      factors.push(n)
+    }
+  }
+  factors.push(this)
+  return factors
+}
+Number.prototype.testFactors=function(factors){
+  return factors.filter(f=>this%f==0)
+}
+function sharedElts(arr1,arr2){
+  return arr1.filter(elt=>arr2.includes(elt))
+}

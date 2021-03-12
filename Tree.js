@@ -1,4 +1,4 @@
-function indexWhereOpLevel(tokens, level,name) {
+function indexWhereOpLevel(tokens, level, name) {
   //gives back indexes of tokens whose level==level given as parameter
   let indexes = []
   for (let i in tokens) {
@@ -49,7 +49,7 @@ function indexWhereType(tokens, type) {
   return indexes
 }
 function handleSyntaxOp(tokens, level, name, doChain = false) {
-  let tokenIndexes = indexWhereOpLevel(tokens, level,name)
+  let tokenIndexes = indexWhereOpLevel(tokens, level, name)
   let indexOff = 0
   let opChain = []
   for (let indexI = 0; indexI < tokenIndexes.length; indexI++) {
@@ -58,6 +58,23 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
     if (doChain) {
       let valBefore = tokens[tokenIndex - 1]
       let valAfter = tokens[tokenIndex + 1]
+      if (valAfter.type == "sign"&&!valAfter.val) {
+        let valAfterTokens = []
+        let i
+        for (i = tokenIndex + 1; i < tokens.length; i++) {
+          if (tokens[i].level) {
+            if (tokens[i].level >= level) {
+              break;
+            }
+          }
+          valAfterTokens.push(tokens[i])
+        }
+        console.log("valAfterTokens",clone_entirely(valAfterTokens),clone_entirely(tokens))
+        //console.log("val1Tokens",clone_entirely(val1Tokens),{tokens,val0,val1,i,token:tokens[i]})
+        valAfter = createSyntaxTree(valAfterTokens)[0]
+        tokens.splice(tokenIndex + 1, valAfterTokens.length)
+        console.log("after",valAfter,clone_entirely(tokens))
+      }
       let nextOpIndex = tokenIndexes[indexI + 1] - indexOff
       opChain.push(valBefore)
       if (nextOpIndex != tokenIndex + 2 || tokens[nextOpIndex].text != token.text) {
@@ -79,6 +96,21 @@ function handleSyntaxOp(tokens, level, name, doChain = false) {
     } else {
       let val0 = tokens[tokenIndex - 1]
       let val1 = tokens[tokenIndex + 1]
+      if (val1.type == "sign") {
+        let val1Tokens = []
+        let i
+        for (i = tokenIndex + 1; i < tokens.length; i++) {
+          if (tokens[i].level) {
+            if (tokens[i].level >= level) {
+              break;
+            }
+          }
+          val1Tokens.push(tokens[i])
+        }
+        //console.log("val1Tokens",clone_entirely(val1Tokens),{tokens,val0,val1,i,token:tokens[i]})
+        val1 = createSyntaxTree(val1Tokens)[0]
+        tokens.splice(tokenIndex + 1, val1Tokens.length)
+      }
       let newObj = {
         val0,
         val1,
@@ -100,6 +132,21 @@ function handleOpReversed(tokens, level, name) {
     let token = tokens[tokenIndex]
     let val0 = tokens[tokenIndex - 1]
     let val1 = tokens[tokenIndex + 1]
+    if (val1.type == "sign") {
+      let val1Tokens = []
+      let i
+      for (i = tokenIndex + 1; i < tokens.length; i++) {
+        if (tokens[i].level) {
+          if (tokens[i].level >= level) {
+            break;
+          }
+        }
+        val1Tokens.push(tokens[i])
+      }
+      //console.log("val1Tokens",clone_entirely(val1Tokens),{tokens,val0,val1,i,token:tokens[i]})
+      val1 = createSyntaxTree(val1Tokens)[0]
+      tokens.splice(tokenIndex + 1, val1Tokens.length)
+    }
     let newObj = {
       val0,
       val1,
@@ -113,6 +160,7 @@ function handleOpReversed(tokens, level, name) {
   }
 }
 function createSyntaxTree(tokens, level = 4) {
+  //console.log("createSyntaxTree",clone_entirely({tokens,level}),new Error())
   if (level == 2) {
     let tokenIndexes = []
     //implementing sign
@@ -188,7 +236,7 @@ function createSyntaxTree(tokens, level = 4) {
     }
   }
   if (level == 3) {
-    handleSyntaxOp(tokens, 3, "pow")
+    handleOpReversed(tokens, 3, "pow")
   }
   if (level == 0) {
     handleSyntaxOp(tokens, 1, "punkt", true)
@@ -196,23 +244,23 @@ function createSyntaxTree(tokens, level = 4) {
   if (level == 1) {
     handleOpReversed(tokens, 2, "div")
   }
-  for(let i=0;i<tokens.length;i++){
-    if(tokens[i].type=="root"){
-        console.log("test")
-        let token=tokens[i]
-        let exp=parse(`1/(${token.exp})`)
-        let rootExp=parse(token.exp)
-        let val0=parse(token.radik)
-        tokens[i]={
-          type:"op",
-          val0,
-          val1:exp,
-          isRootForm:true,
-          rootExp,
-          name:"pow",
-          operand:"^"
-        }
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].type == "root") {
+      console.log("test")
+      let token = tokens[i]
+      let exp = parse(`1/(${token.exp})`)
+      let rootExp = parse(token.exp)
+      let val0 = parse(token.radik)
+      tokens[i] = {
+        type: "op",
+        val0,
+        val1: exp,
+        isRootForm: true,
+        rootExp,
+        name: "pow",
+        operand: "^"
       }
+    }
   }
   if (level == -1) {
     for (let i = 0; i < tokens.length; i++) {
@@ -261,8 +309,8 @@ function parse(text) {
   text = cleanSigns(text)
   let tokens = tokenize(text)
   let TreeL = createSyntaxTree(tokens)
-  if(TreeL.length!=1){
-    throw new Error("Error after treeifying tokens. TreeL is suppost to be only one node, but is"+TreeL.length+"long")
+  if (TreeL.length != 1) {
+    throw new Error("Error after treeifying tokens. TreeL is suppost to be only one node, but is" + TreeL.length + "long")
   }
   return TreeL[0]
 }

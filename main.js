@@ -9,24 +9,6 @@ function start() {
     //Tree=remove_unnessesary_brackets(Tree,1)
     console.log("reduced:", clone_entirely(Tree))
     console.log("result:", token_to_text(Tree))
-    /*
-    let searched="x"
-    let part1=reduce_completely(parse("a-a"))
-    let part2=reduce_completely(parse("0"))
-    console.log(token_to_text(part1)+"="+token_to_text(part2))
-    let solutions=solve_equation(part1,part2,searched)
-    let equationsTexts=[]
-    let equationsText=""
-    if(solutions.length>1){
-    for(let i=0;i<solutions.length;i++){
-      equationsTexts.push(searched+(i+1)+" = "+solutions[i])
-    }
-    equationsText=equationsTexts.join("\n")
-    }else if(solutions.length==1)
-    {
-      equationsText=searched+" = "+solutions[0]
-    }
-    console.log("Solution(s):\n",equationsText)*/
   } catch (e) {
     console.log(e.stack, e, e.message)
   }
@@ -40,7 +22,6 @@ function handleEquationSubmit(event = null) {
   if (event) { event.preventDefault(true) }
   let equationLatex = equationMathField.latex()
   let equationText = latex_to_text(equationLatex)
-  console.log("equationsText", equationText, equationLatex)
   let [part1Text, part2Text] = equationText.replace(/ /g, "").split("=")
   let part1, part2
   try {
@@ -52,10 +33,8 @@ function handleEquationSubmit(event = null) {
     console.error("error while parsing equation. Err:\n", err)
     return
   }
-  console.log({part1,part2})
   let searched = searchVarInput.value
   let otherEquations = getEquations().concat(getKnownEquations())
-  //console.log("otherEquations",otherEquations)
   let solutionPathElt = document.createElement("div")
   solutionPathElt.innerHTML = "<h2>Lösungsweg:</h2><br/>"
   let childElement = document.createElement("div")
@@ -63,20 +42,17 @@ function handleEquationSubmit(event = null) {
   historyContainer.innerHTML = ""
   historyContainer.appendChild(solutionPathElt)
   let solutions = solve_equation(part1, part2, searched, otherEquations, childElement, {}, 0)
-  //let solutionsHTML=""
   solutionsContainer.innerHTML = ""
   for (let solution of solutions) {
-    console.log("solution 11111111",solution)
     solution = token_to_latex(parse(solution))
     let solutionBlock = document.createElement("span")
     solutionBlock.classList.add("solutionBlock")
     solutionBlock.innerHTML = searched + " = " + solution
     MQ.StaticMath(solutionBlock)
     solutionsContainer.appendChild(solutionBlock)
-    //solutionsHTML+=`<span class="solutionBlock">${searched} = ${solution}</span>`
   }
   if (solutions.length == 0) {
-    //solutionsHTML+="<span class='solutionBlock'>no Solution found using the known methods</span>"
+    solutionsContainer.innerHTML="<span class='solutionBlock'>no Solution found using the known methods</span>"
   }
   /*
   let historyHTML="<h3>Lösungsweg:</h3><br/>"
