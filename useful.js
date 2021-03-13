@@ -132,6 +132,9 @@ String.prototype.hashCode = function () {
 }
 function clone_entirely(obj){
   //console.log("cloning",obj,typeof obj,obj.constructor)
+  if(!obj){
+    return obj
+  }
   let clone
   if(obj.constructor==Array){
     clone=[]

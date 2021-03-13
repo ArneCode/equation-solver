@@ -22,6 +22,7 @@ let parantheses = "()"
 let braces = "{}"
 function tokenize(text) {
   //alert("tokenizing... "+text)
+  text = text.replace(/(\(dy\)|dy)\/(\(d([a-zA-Z])\)|d(([a-zA-Z])))/g, "\\deriv{$3$4}")
   if (!(typeof text == "string")) {
     throw new Error("input to tokenize must be a string, not" + text)
   }
@@ -49,7 +50,7 @@ function tokenize(text) {
             val,
             type: "number",
             factor: 1,
-            level:-1
+            level: -1
           })
           index += numlength
         }
@@ -102,6 +103,27 @@ function tokenize(text) {
           exp
         })
         index = text.length - restString.length
+      } else if (restString.startsWith("deriv")) {
+        restString = restString.substr(5).trim()
+        if(!restString.startsWith("{")){
+          throw new Error("Expression hasn't been defined right, expression: ", text)
+        }
+        let searchedEnd=restString.searchForCorres("{","}")
+        let searched=restString.substring(1,searchedEnd)
+        restString=restString.substr(searchedEnd+1).trim()
+        if (!restString.startsWith("(")) {
+          throw new Error("Expression hasn't been defined right, expression: ", text)
+        }
+        let valEnd = restString.searchForCorres("(", ")")
+        let val = restString.substring(1, valEnd)
+        restString = restString.substr(valEnd + 1).trim()
+        tokens.push({
+          text: "dy/dx",
+          type: "deriv",
+          val,
+          searched
+        })
+        index = text.length - restString.length
       }
     }
     else if (text[index] == "-") {
@@ -109,7 +131,7 @@ function tokenize(text) {
         text: "-",
         type: "sign",
         factor: 1,
-        level:0
+        level: 0
       })
       index++
     }
@@ -135,7 +157,7 @@ function tokenize(text) {
       while (index < text.length) {
         index++
         if (operandChars.includes(text[index])) {
-          if ("+-".includes(text[index]) && "+-".includes(text[index - 1])) {
+          if ("+-".includes(text[index])) {
             tokens.push({ text: curr_token, type: "op" })
             curr_token = ""
           }
@@ -170,7 +192,7 @@ function tokenize(text) {
         type: "sign",
         factor: 1,
         name: "plusminus",
-        level:0
+        level: 0
       })
       index++
     }
@@ -220,9 +242,19 @@ function token_to_latex(token, gReturn = false) {
       let text1 = token_to_latex(token.val1, true)
       text += `\\frac{${text0}}{${text1}}`
     } else if (token.name == "pow") {
-      let text0 = token_to_latex(token.val0)
-      let text1 = token_to_latex(token.val1, true)
-      text += text0 + "^{" + text1 + "}"
+      if (token.isRootForm) {
+        let exp = token_to_latex(token.rootExp)
+        let radik = token_to_latex(token.val0)
+        if (exp == "2") {
+          text += `\\sqrt{${radik}}`
+        } else {
+          text += `\\sqrt[${exp}]{${radik}}`
+        }
+      } else {
+        let text0 = token_to_latex(token.val0)
+        let text1 = token_to_latex(token.val1, true)
+        text += text0 + "^{" + text1 + "}"
+      }
     } else {
       text += token_to_text(token)
     }

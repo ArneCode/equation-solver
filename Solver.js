@@ -340,6 +340,7 @@ function trySolvingTactics(part1, part2, searched, historyNode = null) {
   if (result.length > 0) {
     return result
   }
+  childNode.innerHTML=""
   return []
 }
 function getTokenFactors(token) {
@@ -505,6 +506,7 @@ function mitternachtsformel(part1, part2, searched, historyNode = null) {
     }
   }
   let parts = getCoefficients(expression, searched)
+  console.log("parts",parts)
   if (parts.length == 0) {
     return []
   }
@@ -578,12 +580,20 @@ function getCoefficients(token, searched) {
     } else {
       return [{ k: token_to_text(token), exp: "0" }]
     }
-  } else {
+  } else if(token.type=="sign"){
+    let result=[]
+    for(let k of getCoefficients(token.val,searched)){
+      result.push({k:token.text+k.k,exp:k.exp})
+    }
+    return result
+  }
+  else {
     return [{ k: token_to_text(token), exp: "0" }]
   }
 }
 function all_one_side(part1, part2, historyNode = null) {
   let newPart1Text = "(" + token_to_text(part1) + ")-(" + token_to_text(part2) + ")"
+  console.log("newPart1Text",newPart1Text)
   let newPart1 = parse(newPart1Text)
   let newPart2 = parse("0")
   if (part2.val != 0 && historyNode) {

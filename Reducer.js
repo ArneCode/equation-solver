@@ -103,34 +103,34 @@ function replaceVar(text, var_name, content) {
   }
   return text
 }
-function getTokenComplexity(token){
-  let complexity=0
-  for(let subToken of getSubTokens(token)){
+function getTokenComplexity(token) {
+  let complexity = 0
+  for (let subToken of getSubTokens(token)) {
     complexity++
-    if(subToken.isRootForm){
-      complexity+=0.1
-    }else if(subToken.type=="number"){
-      complexity+=String(subToken.val).length/3
+    if (subToken.isRootForm) {
+      complexity += 0.1
+    } else if (subToken.type == "number") {
+      complexity += String(subToken.val).length / 3
     }
   }
   return complexity
 }
-function getSubTokens(token){
-  let subTokens=[token]
-  if(token.type=="op"){
-    subTokens=subTokens.concat(getSubTokens(token.val0),getSubTokens(token.val1))
-  }else if(token.type=="opChain"){
-    for(let subNode of token.content){
-      subTokens=subTokens.concat(getSubTokens(subNode))
+function getSubTokens(token) {
+  let subTokens = [token]
+  if (token.type == "op") {
+    subTokens = subTokens.concat(getSubTokens(token.val0), getSubTokens(token.val1))
+  } else if (token.type == "opChain") {
+    for (let subNode of token.content) {
+      subTokens = subTokens.concat(getSubTokens(subNode))
     }
-  }else if(token.type=="group"){
-    subTokens=subTokens.concat(getSubTokens(token.content))
+  } else if (token.type == "group") {
+    subTokens = subTokens.concat(getSubTokens(token.content))
   }
   return subTokens
 }
-function getSubTypes(token){
-  let types=[]
-  for(let subToken of getSubTokens(token)){
+function getSubTypes(token) {
+  let types = []
+  for (let subToken of getSubTokens(token)) {
     types.push(subToken)
   }
   return types
@@ -155,18 +155,21 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
     let val0 = token.val0 = reduce_token(token.val0, modes, already_reduced, level)
     let val1 = token.val1 = reduce_token(token.val1, modes, already_reduced, level)
     if (token.name == "pow") {
-      if(token.isRootForm){
-        if(getTokenComplexity(token.val1)<=getTokenComplexity(token.rootExp)&&token.val1.val!=2){
-          let newText="("+token_to_text(token.val0)+")"+"^"+token_to_text(token.val1)
-          newToken=parse(newText)
-          newToken=reduce_token(newToken,modes,already_reduced,level)
+      if(val1.val==0){
+        return parse("1")
+      }
+      if (token.isRootForm) {
+        if (getTokenComplexity(token.val1) <= getTokenComplexity(token.rootExp) && token.val1.val != 2) {
+          let newText = "(" + token_to_text(token.val0) + ")" + "^" + token_to_text(token.val1)
+          newToken = parse(newText)
+          newToken = reduce_token(newToken, modes, already_reduced, level)
           return newToken
         }
-      }else{
-        let rootExp=parse(`1/(${token_to_text(token.val1)})`)
-        rootExp=reduce_token(rootExp,modes,already_reduced,level)
-        if(getTokenComplexity(rootExp)<getTokenComplexity(token.val1)){
-          let newText=``
+      } else {
+        let rootExp = parse(`1/(${token_to_text(token.val1)})`)
+        rootExp = reduce_token(rootExp, modes, already_reduced, level)
+        if (getTokenComplexity(rootExp) < getTokenComplexity(token.val1)) {
+          let newText = ``
         }
       }
       if (val0.name == "pow") {
@@ -239,6 +242,7 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
         return parse("1")
       }
       if (val1.val == 0) {
+        console.log("zerodivisionerror with:",clone_entirely({token,text:token_to_text(token)}))
         throw new ZeroDivisionError()
       }
       if (val0.val == 0) {
@@ -396,13 +400,13 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           }
         }
         if (elt2.type == "group") {
-          if (["number","sign"].includes(elt2.content.type)) {
+          if (["number", "sign"].includes(elt2.content.type)) {
             info1 = getInfo(elt2.content)
           }
         }
         if (info1.kind == info2.kind) {
-          let newVal = ((info1.factorText||info1.factor)+((info1.factorText||info2.factorText)?"+":0)+(info2.factorText||info2.factor))
-          let newText = "("+newVal+")" + (info1.kind ? ("*" + info1.kind) : "")
+          let newVal = ((info1.factorText || info1.factor) + ((info1.factorText || info2.factorText) ? "+" : 0) + (info2.factorText || info2.factor))
+          let newText = "(" + newVal + ")" + (info1.kind ? ("*" + info1.kind) : "")
           let { list, i1, i2, restart_loop } = loop_info
           list.splice(i2, 1)
           restart_loop()
@@ -417,7 +421,30 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
       if (token.content.some(elt => elt.val == 0)) {
         return parse("0")
       }
-      token.content = token.content.filter(elt => elt.val != 1)
+      if (token.content.length > 1) {
+        token.content = token.content.filter(elt => elt.val != 1)
+      }
+      if (token.content.length == 0) {
+        return parse("1")
+      }
+      let isNegative = false
+      for (let subIndex in token.content) {
+        let subnode = token.content[subIndex]
+        if (subnode.type == "number") {
+          if (subnode.val < 0) {
+            subnode.val = Math.abs(subnode.val)
+            isNegative = !isNegative
+          }
+        } else if (subnode.type == "sign") {
+          if (subnode.text == "-") {
+            token.content[subIndex] = subnode.val
+            isNegative = !isNegative
+          }
+        }
+      }
+      if (isNegative) {
+        token.content[0] = parse("-" + token_to_text(token.content[0]))
+      }
       token.content.eachWeach(function (elt1, elt2, loop_info) {
         let info1 = getInfo(elt1)
         let info2 = getInfo(elt2)
@@ -430,10 +457,10 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
             let newExp = parse(newExpText)
             newExp = reduce_token(newExp, modes, already_reduced, level)
             elt1.val1 = newExp
-            if(elt1.isRootForm){
-              let rootExp=parse("1/"+newExpText)
-              rootExp=reduce_token(rootExp,modes,already_reduced,level)
-              elt1.rootExp=rootExp
+            if (elt1.isRootForm) {
+              let rootExp = parse("1/" + newExpText)
+              rootExp = reduce_token(rootExp, modes, already_reduced, level)
+              elt1.rootExp = rootExp
             }
             list.splice(i2, 1)
             return restart_loop()
@@ -547,20 +574,48 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
     let { content } = token
     return remove_unnessesary_brackets(token, level)
   } else if (token.type == "sign") {
-    token.val = reduce_token(token.val, modes, already_reduced, level)
+    let val = token.val = reduce_token(token.val, modes, already_reduced, level)
     if (token.text == "-") {
-      let testText = "-1*" + token_to_text(token.val)
+      let testText = "-1*(" + token_to_text(val) + ")"
       let testToken = reduce_token(parse(testText), modes, already_reduced, level)
       if (token_to_text(testToken) != testText) {
         return testToken
       } else {
+        if (val.type == "group") {
+          val = val.content
+        }
+        if (val.type == "number") {
+          return parse(String(val.val * -1))
+        } else if (val.text == "-") {
+          return val.val
+        }
       }
       return token
     } else if (token.val.val == 0) {
       return token.val
     }
+  } else if (token.type == "action") {
+    if (token.name == "deriv") {
+      return deriviate(token.val,token.searched)
+    }
+    return token
   }
   return token
+}
+function deriviate(token, searched, modes={}, already_reduced = [], level = 0) {
+  token = reduce_token(token, modes, already_reduced, level)
+  let ks = getCoefficients(token,searched)
+  console.log("ks",ks)
+  let newTexts=[]
+  for(let k of ks){
+    let newText=k.k+"*("+k.exp+")*"+searched+"^("+k.exp+"-1)"
+    newTexts.push(newText)
+  }
+  let newText = newTexts.join("+")
+  console.log("newText",newText)
+  let newToken=parse(newText)
+  newToken=reduce_token(newToken,modes,already_reduced,level)
+  return newToken
 }
 function remove_unnessesary_brackets(token, level = 0) {
   let f = (token, level) => {
@@ -621,25 +676,25 @@ function getInfo(token) {
   } else if (token.type == "sign") {
     if (token.text == "-") {
       let valInfo = getInfo(token.val)
-      let info={ factor: -1 * valInfo.factor, kind: valInfo.kind}
-      if(valInfo.factorText){
-        info.factorText="-"+valInfo.factorText
+      let info = { factor: -1 * valInfo.factor, kind: valInfo.kind }
+      if (valInfo.factorText) {
+        info.factorText = "-" + valInfo.factorText
       }
       return info
     }
-  }else if(token.type=="op"){
-    let val0=token.val0
-    let val1=token.val1
-    if(token.name=="div"){
-      if(["number"].includes(val0.type)){
-        return {factor:val0.val,kind: "1/"+getInfo(val1).kind}
-      }else if(val1.type=="number"){
-        let factor=1/val1.val
-        let info={factor:factor,kind:getInfo(val0).kind}
-        if(!doAction(factor,{})){
-          let factorText="1/"+val1.val
-          if(factorText.length<String(factor).length){
-            info.factorText=factorText
+  } else if (token.type == "op") {
+    let val0 = token.val0
+    let val1 = token.val1
+    if (token.name == "div") {
+      if (["number"].includes(val0.type)) {
+        return { factor: val0.val, kind: "1/" + getInfo(val1).kind }
+      } else if (val1.type == "number") {
+        let factor = 1 / val1.val
+        let info = { factor: factor, kind: getInfo(val0).kind }
+        if (!doAction(factor, {})) {
+          let factorText = "1/" + val1.val
+          if (factorText.length < String(factor).length) {
+            info.factorText = factorText
           }
         }
         return info
@@ -649,40 +704,43 @@ function getInfo(token) {
   return { factor: 1, kindObj: token, kind: token_to_text(token) }
 }
 function token_to_text(token) {
-  try{
-  if (token.type.isOf(["number", "word"])) {
-    return token.text
-  } else if (token.type == "op") {
-    let val0 = token_to_text(token.val0)
-    let val1 = token_to_text(token.val1)
-    if (token.name == "pow"&&token.isRootForm) {
-      let rootExp=token_to_text(token.rootExp)
-      let result
-      if(rootExp=="2"){
-        result=String.fromCharCode(92)+`sqrt{${val0}}`
-      }else{
-        result=String.fromCharCode(92)+`sqrt[${rootExp}]{${val0}}`
+  try {
+    if (token.type.isOf(["number", "word"])) {
+      return token.text
+    } else if (token.type == "op") {
+      let val0 = token_to_text(token.val0)
+      let val1 = token_to_text(token.val1)
+      if (token.name == "pow" && token.isRootForm) {
+        let rootExp = token_to_text(token.rootExp)
+        let result
+        if (rootExp == "2") {
+          result = String.fromCharCode(92) + `sqrt{${val0}}`
+        } else {
+          result = String.fromCharCode(92) + `sqrt[${rootExp}]{${val0}}`
+        }
+        return result
       }
+      let result = val0 + token.operand + val1
       return result
+    } else if (token.type == "opChain") {
+      let text = token.content.map(elt => token_to_text(elt))
+      text = text.join(token.operand)
+      return text
+    } else if (token.type == "group") {
+      return "(" + token_to_text(token.content) + ")"
+    } else if (token.type == "sign") {
+      return token.text + token_to_text(token.val)
+    } else if (token.type == "action") {
+      if (token.name == "deriv") {
+        return `dy/dx(` + token_to_text(token.val) + ")"
+      }
+    } else {
+      return token.text
     }
-    let result = val0 + token.operand + val1
-    return result
-  } else if (token.type == "opChain") {
-    let text = token.content.map(elt => token_to_text(elt))
-    text = text.join(token.operand)
-    return text
-  } else if (token.type == "group") {
-    return "(" + token_to_text(token.content) + ")"
-  } else if (token.type == "sign") {
-    return token.text + token_to_text(token.val)
+  } catch (err) {
+    console.log("token_to_text error", token)
+    throw err
   }
-  else {
-    return token.text
-  }
-}catch(err){
-  console.log("token_to_text error",token)
-  throw err
-}
 }
 class NegativeRootError extends Error {
   constructor(message, rootContent, exponent) {
@@ -706,9 +764,9 @@ function reduce_completely(token, modes = { simplify: true }, historyNode = null
   let before = []
   let beforeText = token_to_text(token)
   let result = reduce_token(token, modes)
-  let resultAfter=clone_entirely(result)
+  let resultAfter = clone_entirely(result)
   let resultText
-    resultText = token_to_text(result)
+  resultText = token_to_text(result)
   while (!before.includes(resultText)) {
     before.push(resultText)
     result = reduce_token(parse(resultText), modes)
