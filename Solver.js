@@ -340,7 +340,7 @@ function trySolvingTactics(part1, part2, searched, historyNode = null) {
   if (result.length > 0) {
     return result
   }
-  childNode.innerHTML=""
+  childNode.innerHTML = ""
   return []
 }
 function getTokenFactors(token) {
@@ -506,7 +506,7 @@ function mitternachtsformel(part1, part2, searched, historyNode = null) {
     }
   }
   let parts = getCoefficients(expression, searched)
-  console.log("parts",parts)
+  console.log("parts", parts)
   if (parts.length == 0) {
     return []
   }
@@ -580,20 +580,42 @@ function getCoefficients(token, searched) {
     } else {
       return [{ k: token_to_text(token), exp: "0" }]
     }
-  } else if(token.type=="sign"){
-    let result=[]
-    for(let k of getCoefficients(token.val,searched)){
-      result.push({k:token.text+k.k,exp:k.exp})
+  } else if (token.type == "sign") {
+    let result = []
+    for (let k of getCoefficients(token.val, searched)) {
+      result.push({ k: token.text + k.k, exp: k.exp })
     }
     return result
-  }
+  } else if (token.type == "word" && token.text == searched) {
+    return [{ k: "1", exp: "1" }]
+  } else if(token.type=="group"){
+    return getCoefficients(token.content,searched)
+  }/*else if (token.name == "div") {
+    let result = getCoefficients(token.val0, searched)
+
+    if (token.val1.variables.includes(searched)) {
+      let divisors=[]
+      for(let k of getCoefficients(token.val1,searched)){
+        if(k.exp!="0"){
+          result.push({k:k.k,exp:"-"+k.exp})
+        }else{
+          divisors.push(k.k)
+        }
+      }
+      if(divisors.length!=0){
+        let k=`1/(${divisors.join("+")})`
+        result.push({k,exp:"0"})
+      }
+    }
+    return result
+  }*/
   else {
     return [{ k: token_to_text(token), exp: "0" }]
   }
 }
 function all_one_side(part1, part2, historyNode = null) {
   let newPart1Text = "(" + token_to_text(part1) + ")-(" + token_to_text(part2) + ")"
-  console.log("newPart1Text",newPart1Text)
+  console.log("newPart1Text", newPart1Text)
   let newPart1 = parse(newPart1Text)
   let newPart2 = parse("0")
   if (part2.val != 0 && historyNode) {

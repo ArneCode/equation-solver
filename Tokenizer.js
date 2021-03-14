@@ -22,7 +22,7 @@ let parantheses = "()"
 let braces = "{}"
 function tokenize(text) {
   //alert("tokenizing... "+text)
-  text = text.replace(/(\(dy\)|dy)\/(\(d([a-zA-Z])\)|d(([a-zA-Z])))/g, "\\deriv{$3$4}")
+  text = text.replace(/(\(dy\)|dy)\/(\(d([a-zA-Z]+)\)|d([a-zA-Z]+))/g, "\\deriv{$3$4}")
   if (!(typeof text == "string")) {
     throw new Error("input to tokenize must be a string, not" + text)
   }

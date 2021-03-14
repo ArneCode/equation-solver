@@ -84,12 +84,12 @@ function doAction(newVal, modes) {
   }
   return true
 }
-function tryForm(testText, modes, already_reduced, level) {
+function tryForm(testText, modes, already_reduced, level, doAnyway = false) {
   let testToken = parse(testText)
   testToken = remove_unnessesary_brackets(testToken, level)
   testText = token_to_text(testToken)
   testToken = reduce_token(testToken, modes, already_reduced, level)
-  if (token_to_text(testToken) != testText) {
+  if (token_to_text(testToken) != testText || doAnyway) {
     return testToken
   }
   return null
@@ -137,7 +137,7 @@ function getSubTypes(token) {
 }
 function reduce_token(token, modes = { simplify: "true" }, already_reduced = [], level = 0) {
   //modes:
-  //simplify, expand, calc_completely, compact, disperse
+  //simplify, expand, calc_completely, compact, disperse, expForm
   if (token_to_text(token).includes("Infinity")) {
     throw new Error("Infinity")
   }
@@ -155,7 +155,7 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
     let val0 = token.val0 = reduce_token(token.val0, modes, already_reduced, level)
     let val1 = token.val1 = reduce_token(token.val1, modes, already_reduced, level)
     if (token.name == "pow") {
-      if(val1.val==0){
+      if (val1.val == 0) {
         return parse("1")
       }
       if (token.isRootForm) {
@@ -176,19 +176,26 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
         let newBaseExpText = "(" + token_to_text(val0.val1) + "*" + token_to_text(val1) + ")"
         val0.val1 = reduce_token(parse(newBaseExpText), modes, already_reduced, level)
         return val0
-      } if (val0.type == "group" && modes.expand) {
+      } if ((val0.type == "group"||["punkt","div"].includes(val0.name)) && (modes.expand||modes.disperse)) {
         let gContent = val0.content
+        if(["punkt","div"].includes(val0.name)){
+          gContent=val0
+        }
+        console.log("test",token,token_to_text(token))
         if (gContent.name == "punkt") {
           let testText = "(" + gContent.content.map(t => "(" + token_to_text(t) + ")" + "^" + token_to_text(val1)).join("*") + ")"
-          let testToken = tryForm(testText, modes, already_reduced, level)
-          if (testToken) {
+          let testToken = tryForm(testText, modes, already_reduced, level, modes.disperse)
+          if (testToken && !modes.compact) {
+            console.log("done",{modes,testText})
             return testToken
+          }else{
+            console.log("not done",{modes,testText})
           }
         } else if (gContent.name == "div") {
           let testText = `((${token_to_text(gContent.val0)}^${token_to_text(val1)})/${token_to_text(gContent.val1)}^${token_to_text(val1)})`
           let testToken = parse(testText)
           testToken = reduce_token(testToken, modes, already_reduced, level)
-          if (token_to_text(testToken) != testText) {
+          if ((token_to_text(testToken) != testText && !modes.compact) || modes.disperse) {
             return testToken
           }
         }
@@ -223,13 +230,24 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           return val0
         } else if (val1.val == 0) {
           return parse("1")
-        } else if (val1.val < 0) {
+        } else if (val1.val < 0 && !modes.expForm) {
           let newText = `(1/(${token_to_text(val0)})^${Math.abs(val1.val)})`
           let newToken = parse(newText)
           newToken = reduce_token(newToken, modes, already_reduced, level)
           return newToken
+        } else if (val1.val < 0 && val0.name == "div") {
+          let newText = `(${token_to_text(val0.val1)}/${token_to_text(val0.val0)})^${Math.abs(val1.val)}`
+          return tryForm(newText, modes, already_reduced, level, true)
         }
-      } else if (val0.type == "number") {
+      } else if (val1.type == "sign") {
+        if (val1.text == "-") {
+          if (val0.name == "div") {
+            let newText = `(${token_to_text(val0.val1)}/${token_to_text(val0.val0)})^${token_to_text(val1.val1)}`
+            return tryForm(newText, modes, already_reduced, level, true)
+          }
+        }
+      }
+      if (val0.type == "number") {
         if (val0.val == 1) {
           return parse("1")
         } else if (val0.val == 0) {
@@ -242,7 +260,7 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
         return parse("1")
       }
       if (val1.val == 0) {
-        console.log("zerodivisionerror with:",clone_entirely({token,text:token_to_text(token)}))
+        console.log("zerodivisionerror with:", clone_entirely({ token, text: token_to_text(token) }))
         throw new ZeroDivisionError()
       }
       if (val0.val == 0) {
@@ -256,7 +274,7 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           return parse(String(newVal))
         else return token
       }
-      if (modes.expand) {
+      if (modes.expand || modes.disperse) {
         let gwotherResult = groupWother(val0, val1, { operandText: token.operand, operandObj: token, reduce_modes: modes }, already_reduced)
         if (gwotherResult) {
           return gwotherResult
@@ -284,6 +302,13 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           if (token_to_text(testToken) != testText) {
             return testToken
           }
+        }
+      }
+      if (!modes.compact) {
+        let testText = `(${token_to_text(val0)})*(${token_to_text(val1)})^-1`
+        let newToken = tryForm(testText, modes, already_reduced, level, modes.disperse)
+        if (newToken) {
+          return newToken
         }
       }
       if (val0.type == "group" && val1.type == "group") {
@@ -350,6 +375,9 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           newExp = reduce_token(newExp, modes, already_reduced, level)
           val0.val1 = newExp
           return val0
+        }else if(token_to_text(val0.val1)==token_to_text(val1.val1)&&!modes.expand){
+          let newText=`(${val0.val0}/${val1.val0})^${val0.val1}`
+          return tryForm(newText,modes,already_reduced,level,true)
         }
       } else if (val0.name == "pow") {
         if (token_to_text(val0.val0) == token_to_text(val1)) {
@@ -357,6 +385,11 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           newExp = reduce_token(newExp, modes, already_reduced, level)
           val0.val1 = newExp
           return val0
+        } else if (token_to_text(val0.val1) == token_to_text(val1.val1)) {
+          let newText = `${token_to_text(val0.val0)}/${token_to_text(val1.val0)}`
+          let newToken = parse(newText)
+          newToken = reduce_token(newToken, modes, already_reduced, level)
+          return newToken
         }
       } else if (val1.name == "pow") {
         if (token_to_text(val1.val0) == token_to_text(val0)) {
@@ -452,7 +485,7 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
         if (elt1.name == "pow" && elt2.name == "pow") {
           let base1Text = token_to_text(elt1.val0)
           let base2Text = token_to_text(elt2.val0)
-          if (base1Text == base2Text) {
+          if (base1Text == base2Text&&!modes.disperse) {
             let newExpText = `(${token_to_text(elt1.val1)}+${token_to_text(elt2.val1)})`
             let newExp = parse(newExpText)
             newExp = reduce_token(newExp, modes, already_reduced, level)
@@ -513,13 +546,13 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
           let testText = `(${token_to_text(elt1.val0)}*${token_to_text(elt2.val0)})/(${token_to_text(elt1.val1)}*${token_to_text(elt2.val1)})`
           let testToken = parse(testText)
           testToken = reduce_token(testToken, modes, already_reduced, level)
-          if (token_to_text(testToken) != testText) {
+          if (token_to_text(testToken) != testText&&!modes.disperse) {
             list[i1] = testToken
             list.splice(i2, 1)
             return restart_loop()
           }
         }
-        else if (elt1.name == "div" || elt2.name == "div") {
+        else if ((elt1.name == "div" || elt2.name == "div")&&!modes.disperse) {
           let div, other
           if (elt1.name == "div") {
             div = elt1
@@ -596,25 +629,27 @@ function reduce_token(token, modes = { simplify: "true" }, already_reduced = [],
     }
   } else if (token.type == "action") {
     if (token.name == "deriv") {
-      return deriviate(token.val,token.searched)
+      return deriviate(token.val, token.searched)
     }
     return token
   }
   return token
 }
-function deriviate(token, searched, modes={}, already_reduced = [], level = 0) {
+function deriviate(token, searched, modes = {}, already_reduced = [], level = 0) {
+  modes=clone_entirely(modes)
+  modes.disperse=true
   token = reduce_token(token, modes, already_reduced, level)
-  let ks = getCoefficients(token,searched)
-  console.log("ks",ks)
-  let newTexts=[]
-  for(let k of ks){
-    let newText=k.k+"*("+k.exp+")*"+searched+"^("+k.exp+"-1)"
+  let ks = getCoefficients(token, searched)
+  console.log("ks", ks)
+  let newTexts = []
+  for (let k of ks) {
+    let newText = k.k + "*(" + k.exp + ")*" + searched + "^(" + k.exp + "-1)"
     newTexts.push(newText)
   }
   let newText = newTexts.join("+")
-  console.log("newText",newText)
-  let newToken=parse(newText)
-  newToken=reduce_token(newToken,modes,already_reduced,level)
+  console.log("newText", newText,newTexts,ks)
+  let newToken = parse(newText)
+  newToken = reduce_token(newToken, modes, already_reduced, level)
   return newToken
 }
 function remove_unnessesary_brackets(token, level = 0) {
