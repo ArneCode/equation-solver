@@ -1,7 +1,144 @@
-html, body {
-  margin: 0;
-  padding: 0;
+body{
+  position: relative;
+  top:30px;
 }
 canvas {
   display: block;
+}
+button.large{
+  font-size: 1.5em;
+}
+input.large{
+  font-size: 1.5em;
+  width: 70%;
+}
+.center{
+  position: relative;
+  left: 10%;
+  max-width: 70%;
+}
+input{
+  border-radius: 5px;
+  border:1px solid;
+}
+button{
+  border-radius: 5px;
+  padding-bottom: 3px;
+}
+#solutionsContainer{
+  max-height:160px;
+  overflow-x: hidden;
+}
+.solutionBlock{
+  border: 1px solid grey;
+  border-radius: 3px;
+  font-size: 1.5em;
+  display: block;
+  width:70%;
+}
+.historyBlock{
+  border: 1px solid grey;
+  border-radius: 3px;
+  display: block;
+  width:70%;
+  overflow: auto;
+}
+.historyTitleBlock{
+  font-size: 2em;
+  font-weight: bold;
+}
+.indented{
+  position: relative;
+  left: 13px;
+}
+h3{
+  display: block;
+}
+.top-right{
+  position: fixed;
+  right:10px;
+  top:5px;
+}
+ /* The sidebar menu */
+ /*from https://www.w3schools.com/howto/howto_css_fixed_sidebar.asp*/
+.sidenav {
+  height: 60%;  /*Full-height: remove this if you want "auto" height */
+  width: 7%; /* Set the width of the sidebar */
+  position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+  z-index: 1; /* Stay on top */
+  top: 90px; /* Stay at the top */
+  left: 10px;
+  overflow-x: hidden; /* Disable horizontal scroll */
+  padding-top: 60px;
+  background-color:lightgray;
+}
+
+/* The navigation menu links */
+.sidenav a {
+  padding:5px;
+  /*padding: 6px 8px 6px 16px;*/
+  text-decoration: none;
+  font-size: 1.2em;
+  color: black;
+  display: block;
+  text-align: center;
+}
+
+/* When you mouse over the navigation links, change their color */
+.sidenav a:hover {
+  color: grey;
+  background-color:rgb(183, 183, 183);
+}
+.active{
+  color:black;
+  background-color:rgb(181, 181, 181);
+}
+/* Style page content */
+.main {
+  margin-left: 160px; /* Same as the width of the sidebar */
+  padding: 0px 10px;
+}
+
+/* On smaller screens, where height is less than 450px, change the style of the sidebar (less padding and a smaller font size) 
+@media screen and (max-height: 450px) {
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
+} 
+/*end of sidebar*/
+#equationsInputDiv{
+  position:fixed;
+  padding:12px;
+  right:10px;
+  display: block;
+  height:70%;
+  background-color:lightgray;
+  overflow-y: hidden;
+}
+.addedEquation{
+  border:0px;
+  border-radius: 0px;
+  background-color:transparent;
+  display:block;
+}
+.knownEquation{
+  border:0px;
+  border-radius: 0px;
+  background-color:transparent;
+  display:block;
+}
+.error{
+  border:1px solid red;
+}
+.error:hover{
+  background-color:rgb(250, 174, 174);
+}
+p{
+  overflow:hidden;
+}
+#addedEquationsWarn{
+  color:#ff5100;
+  font-size:1em;
+}
+#equationInput{
+  width:70%;
 }
