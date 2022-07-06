@@ -1,41 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<link rel="stylesheet" type="text/css" href="style.css">
-	<link rel="stylesheet" type="text/css" href="dropdown.css">
-	<link rel="stylesheet" type="text/css" href="mathquill-0.10.1/mathquill.css">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js">
-	</script>
-	<meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="dropdown.css">
+  <link rel="stylesheet" type="text/css" href="mathquill-0.10.1/mathquill.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js">
+  </script>
+  <meta charset="utf-8">
 </head>
+
 <body onload="start()">
-	<div id="mainContent">
-		<div class="top-right">
-			<button id="settingsButton">settings</button>
+  <div id="mainContent">
+    <div class="top-right">
+      <button id="settingsButton">settings</button>
     </div>
-	<div class="center" style="top:30%;">
-		<form id="equationForm">
-      <div id="equationInput"></div>
-      <button type="submit" class="large">go</button>
-      <br/>
-      searched var:
-      <input id="searchVarInput" placeholder="searched var" value="x"></input>
-    </form>
-    <div id="equationsInputDiv">
-      <h3>Values/Equations</h3>
-      <form id="mainContentAddEquationForm">
-        <input id="addEquationsInput">
-        <button type="submit">+</button>
-        <div id="addedEquationsWarn"></div>
+    <div class="center" style="top:30%;">
+      <form id="equationForm">
+        <div id="equationInput"></div>
+        <button type="submit" class="large">go</button>
+        <br />
+        searched var:
+        <input id="searchVarInput" placeholder="searched var" value="x"></input>
       </form>
-      <div id="enteredEquations"></div>
-      <button onclick="enteredEquations.innerHTML=''">remove all</button>
+      <div id="equationsInputDiv">
+        <h3>Values/Equations</h3>
+        <form id="mainContentAddEquationForm">
+          <input id="addEquationsInput">
+          <button type="submit">+</button>
+          <div id="addedEquationsWarn"></div>
+        </form>
+        <div id="enteredEquations"></div>
+        <button onclick="enteredEquations.innerHTML=''">remove all</button>
+      </div>
+      <div id="solutionsContainer">
+      </div>
+      <div id="historyContainer">
+      </div>
+      Mal immer eingeben, auch zwischen Zahlen und Variablen. <strong style="color:red">Vorsicht: </strong> Eingeben einiger Gleichungen kann zu einer Endlosschleife und zum möglichen Abstürzen der Seite und villeicht sogar des Internet-Browsers führen.<br>
+      Gleichungen die Funktionieren sind zum Beispiel:
+      <ul>
+        <li>5*x=3+x</li>
+        <li>x^2+3=7</li>
+      </ul>
     </div>
-    <div id="solutionsContainer">
-    </div>
-    <div id="historyContainer">
-    </div>
-  </div>
   </div>
   <div id="settingsContent" style="display:none">
     <div class="top-right">
@@ -51,31 +59,32 @@
       <div class="section" id="settingsGeneral">
         <h3>General Settings</h3>
         <input type="checkbox" id="calcCompletelyBox"> Calculate Solutions Completely
-        <br/>
+        <br />
         How many digits after comma are allowed before stopping calculation
-        <br/>
-          <input type="range" min="0" max="10" id="calcCompletelyStop"> 
-        <br/>
-        <input type="checkbox" id="useDecimalJSInput"> wether <a href="https://github.com/MikeMcl/decimal.js/" target="_blank">decimal.js</a> should be used
-        <br/>
+        <br />
+        <input type="range" min="0" max="10" id="calcCompletelyStop">
+        <br />
+        <input type="checkbox" id="useDecimalJSInput"> wether <a href="https://github.com/MikeMcl/decimal.js/"
+          target="_blank">decimal.js</a> should be used
+        <br />
         calculation precision
-        <br/>
+        <br />
         <input type="number" max="2000" min="5" id="precisionInput" placeholder="precision" required>
       </div>
-            <div class="section" id="settingsEquations">
+      <div class="section" id="settingsEquations">
         <h3>Equations</h3>
         <form id="settingsKnownEquationsForm">
           <input id="knownEquationsInput">
           <button type="submit">+</button>
         </form>
-            <div id="addedKnownEquationsDiv">
+        <div id="addedKnownEquationsDiv">
 
-            </div>
-            <div id="knownEquationsDiv">
+        </div>
+        <div id="knownEquationsDiv">
 
-            </div>
+        </div>
       </div>
-            <div class="section" id="settingsUnits">
+      <div class="section" id="settingsUnits">
         <h3>Units</h3>
         <form id="addUnitForm">
           <div id="measur-dropdown">
@@ -85,7 +94,7 @@
             </div>
           </div>
           <input id="newUnitInput">
-        <button type="submit">+</button>
+          <button type="submit">+</button>
         </form>
         <div id="unitsDiv">
 
@@ -94,24 +103,27 @@
     </div>
   </div>
   <script src="mathquill-0.10.1/mathquill.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/9.0.0/decimal.min.js" integrity="sha512-zPQm8HS4Phjo9pUbbk+HPH3rSWu5H03NFvBpPf6D9EU2xasj0ZxhYAc/lvv/HVDWMSE1Autj19i6nZOfiVQbFQ==" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/9.0.0/decimal.min.js"
+    integrity="sha512-zPQm8HS4Phjo9pUbbk+HPH3rSWu5H03NFvBpPf6D9EU2xasj0ZxhYAc/lvv/HVDWMSE1Autj19i6nZOfiVQbFQ=="
+    crossorigin="anonymous"></script>
   <script>
-let MQ = MathQuill.getInterface(2);
-</script>
-<script src="dom.js"></script>
-	<script src="useful.js">
-	</script>
+    let MQ = MathQuill.getInterface(2);
+  </script>
+  <script src="dom.js"></script>
+  <script src="useful.js">
+  </script>
   <script src="Reducer.js">
   </script>
-	<script src="Tokenizer.js">
-	</script>
-	<script src="Tree.js">
-	</script>
-	<script src="Solver.js">
-	</script>
-	<script src="main.js">
-	</script>
+  <script src="Tokenizer.js">
+  </script>
+  <script src="Tree.js">
+  </script>
+  <script src="Solver.js">
+  </script>
+  <script src="main.js">
+  </script>
   <script src="hideable.js">
   </script>
 </body>
+
 </html>
